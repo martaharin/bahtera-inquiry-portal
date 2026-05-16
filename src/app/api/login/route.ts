@@ -5,7 +5,6 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    // Pastikan 'role' sesuai nama tabel di DBeaver (tanpa s)
     const result = await dbQuery(
       `SELECT u.*, r.role_name 
        FROM users u 
