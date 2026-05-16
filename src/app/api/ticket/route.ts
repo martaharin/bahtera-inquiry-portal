@@ -11,7 +11,7 @@ export async function GET() {
     const result = await dbQuery(`
       SELECT
           t.ticket_id,
-          t.status_id,
+          t.status,
           t.assigned_user_id,
           t.created_at,
           i.inquiry_id,
@@ -79,12 +79,12 @@ export async function POST(req: Request) {
     const inquiryId = inquiryResult.rows[0].inquiry_id;
 
     // 2. INSERT INTO TICKET
-    // Pastikan status_id 1 memang ada di tabel 'status' kamu
+    // Pastikan status 1 memang ada di tabel 'status' kamu
     const ticketResult = await dbQuery(
       `
       INSERT INTO public.ticket (
         inquiry_id,
-        status_id,
+        status,
         created_at
       )
       VALUES ($1, 1, NOW())

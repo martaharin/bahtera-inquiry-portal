@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function TicketPage() {
   const [mounted, setMounted] = useState(false);
-  const [tickets, setTickets] = useState([]); // State untuk data asli dari DB
+  const [tickets, setTickets] = useState<any[]>([]); // State untuk data asli dari DB
   const [isLoading, setIsLoading] = useState(true);
 
   // Fungsi untuk mengambil data dari API
@@ -116,7 +116,7 @@ export default function TicketPage() {
         <div className="grid grid-cols-6 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
           <div>Inquiry / Company</div>
           <div className="text-center">Consent</div>
-          <div className="text-center">Location</div>
+          <div className="text-center">Assigned To</div>
           <div className="text-center">Industry</div>
           <div className="text-center">Requester</div>
           <div className="text-right">Action</div>
@@ -145,7 +145,7 @@ export default function TicketPage() {
                   {ticket.consent_to_contact ? 'YES' : 'NO'}
                 </div>
 
-                <div className="text-center font-bold text-gray-900 uppercase">{ticket.location || '-'}</div>
+                <div className="text-center font-bold text-gray-900 uppercase">{ticket.assigned_user_id || '-'}</div>
 
                 <div className="text-center font-bold text-gray-400 uppercase tracking-tighter">{ticket.industry || '-'}</div>
                 
@@ -155,7 +155,7 @@ export default function TicketPage() {
                 </div>
                 
                 <div className="text-right">
-                  <Link href={`/admin/ticket/${ticket.inquiry_id}`}>
+                  <Link href={`/admin/ticket/${ticket.ticket_id}`}>
                       <button className="text-[10px] font-black text-orange-400 hover:text-orange-600 transition-all uppercase tracking-[0.2em]">
                           View Details →
                       </button>

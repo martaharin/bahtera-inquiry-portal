@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import StatCard from '../../components/statcard';
+import StatCard from '@/app/components/statcard';
+// import StatCard from '@/components/statcard';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
