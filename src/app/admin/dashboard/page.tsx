@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
           {recentTickets.length === 0 ? (
 
-            <div className="bg-white p-10 rounded-[24px] text-center font-bold text-gray-400 italic">
+            <div className="bg-white p-10 rounded-3xl text-center font-bold text-gray-400 italic">
               No recent tickets found.
             </div>
 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
             recentTickets.map((ticket: any) => (
               <div
                 key={ticket.ticket_id}
-                className="grid grid-cols-6 items-center bg-white p-6 rounded-[24px] border border-orange-50 shadow-sm text-[12px] font-medium text-gray-600 transition-all hover:shadow-md"
+                className="grid grid-cols-6 items-center bg-white p-6 rounded-3xl border border-orange-50 shadow-sm text-[12px] font-medium text-gray-600 transition-all hover:shadow-md"
               >
 
                 {/* Inquiry */}
