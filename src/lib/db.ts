@@ -1,19 +1,15 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
- 
-  max: 20, 
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: Number(process.env.DB_PORT || 5432),
 });
 
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
-
-export const dbQuery = (text: string, params?: any[]) => pool.query(text, params);
-
-export { pool };
+export const db = {
+  query: (text: string, params?: unknown[]) => {
+    return pool.query(text, params);
+  },
+};
