@@ -1,0 +1,106 @@
+{
+  "suppliers": [
+    "Batai",
+    "Adisseo",
+    "Meihua",
+    "D-BASF",
+    "BioAnalyt",
+    "Clariant",
+    "Fumei",
+    "Nanliu",
+    "Nusil",
+    "Yizhou",
+    "Zhejiang",
+    "Blue Aqua"
+  ],
+  "industries": [
+    {
+      "industry": "Personal & Household Care",
+      "description": "The business unit provides specialty chemicals for a wide range of skin, hair, and body care products as well as household care products. We support industry development through collaboration and innovation.",
+      "sub_industries": [
+        {
+          "name": "Personal Care",
+          "url": "https://bahteraadijaya.com/en/solutions/personal-care"
+        },
+        {
+          "name": "Household Care",
+          "url": "https://bahteraadijaya.com/en/solutions/household-care"
+        }
+      ]
+    },
+    {
+      "industry": "Food & Beverages",
+      "description": "Our business unit provides specialty chemicals for consumable goods. We prioritize sourcing top-quality ingredients and providing innovative solutions to meet our clients' changing needs.",
+      "sub_industries": [
+        {
+          "name": "Food & Beverages",
+          "url": "https://bahteraadijaya.com/en/solutions/food-and-beverages"
+        }
+      ]
+    },
+    {
+      "industry": "Agriculture & Animal Care",
+      "description": "The business unit provides specialty chemicals for Agriculture & Animal Care. Through innovative strategies and integrity-driven approaches, we build trust and foster long-term relationships with stakeholders.",
+      "sub_industries": [
+        {
+          "name": "Agriculture",
+          "url": "https://bahteraadijaya.com/en/solutions/agriculture"
+        },
+        {
+          "name": "Animal Care",
+          "url": "https://bahteraadijaya.com/en/solutions/animal-care"
+        },
+        {
+          "name": "Aquaculture",
+          "url": "https://bahteraadijaya.com/en/solutions/aquaculture"
+        }
+      ]
+    },
+    {
+      "industry": "Industrial Solutions",
+      "description": "The Industrial Solutions industry aims to lead in coating & construction solutions in Indonesia. We focus on continuous innovation, providing diverse paint raw materials to meet industry needs.",
+      "sub_industries": [
+        {
+          "name": "Industrial Cleaning",
+          "url": "https://bahteraadijaya.com/en/solutions/industrial-cleaning"
+        },
+        {
+          "name": "Coating and Construction",
+          "url": "https://bahteraadijaya.com/en/solutions/coating-and-construction"
+        },
+        {
+          "name": "Emulsion and Polymerization",
+          "url": "https://bahteraadijaya.com/en/solutions/emulsion-and-polymerization"
+        }
+      ]
+    },
+    {
+      "industry": "Healthcare & Hygiene",
+      "description": "The Health & Hygiene industry provides vital raw materials and chemicals for products that promote cleanliness and well-being. With a focus on innovation, we enhance product efficacy and safety, contributing to better health and hygiene standards in communities.",
+      "sub_industries": [
+        {
+          "name": "Medical",
+          "url": "https://bahteraadijaya.com/en/solutions/medical"
+        },
+        {
+          "name": "Hygiene",
+          "url": "https://bahteraadijaya.com/en/solutions/hygiene"
+        },
+        {
+          "name": "Pharma",
+          "url": "https://bahteraadijaya.com/en/solutions/pharma"
+        }
+      ]
+    },
+    {
+      "industry": "Paper, Packaging & Export",
+      "description": "With a focus on innovation and sustainability, the Paper, Packaging, and Export provide customized solutions to the needs of our clients across various industries.",
+      "sub_industries": [
+        {
+          "name": "Paper, Packaging & Export",
+          "url": "https://bahteraadijaya.com/en/solutions/paper-packaging-export"
+        }
+      ]
+    }
+  ]
+}
