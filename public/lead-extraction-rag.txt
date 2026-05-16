@@ -12,6 +12,7 @@ Schema:
   "industry": string | null,
   "industry_scale": string | null,
   "product_inquiry": string | null,
+  "type": string | null,
   "reason_for_inquiry": string | null,
   "consent_to_contact": boolean | null
 }
@@ -21,3 +22,4 @@ Rules:
 - Do not guess.
 - Keep null if unknown.
 - consent_to_contact is true only if user clearly agrees to be contacted.
+- type is filled with purchase or supply
