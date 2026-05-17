@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     // };
 
     console.log(leadData);
+
     const values = [
       sessionId,
       leadData.name ?? "",
@@ -176,15 +177,17 @@ export async function GET(request: NextRequest) {
       values,
     );
 
-    const inquiryId = insertInquiry.rows[0].inquiry_id;
+    const inquiryId = insertInquiry.rows[0];
 
     const userResult = await db.query(
       `
-      INSERT INTO ticket (inquiry_id)
-      VALUES ($1)
+      INSERT INTO ticket (inquiry_id, status)
+      VALUES ($1, $2)
+        DO UPDATE SET
+          status = EXCLUDED.status
       RETURNING ticket_id, created_at
       `,
-      [inquiryId],
+      [inquiryId.inquiry_id, inquiryId.consent_to_contact ? 1 : 0],
     );
     const ticketId = userResult.rows[0];
 
