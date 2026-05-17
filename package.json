@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.64.1",
+    "bcryptjs": "^3.0.3",
+    "cookies-next": "^6.1.1",
     "next": "16.2.6",
+    "next-auth": "^4.24.14",
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"

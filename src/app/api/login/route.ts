@@ -1,58 +1,113 @@
-import { dbQuery } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { NextResponse, NextRequest } from 'next/server';
+import { setCookie } from 'cookies-next'; 
 
-export async function POST(request: Request) {
+
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const { email, password } = await request.json();
 
-    const email = body.email?.trim();
-    const password = body.password;
-
-    console.log("LOGIN REQUEST RAW:", body);
-    console.log("EMAIL AFTER TRIM:", `[${email}]`);
-
-    const result = await dbQuery(
-      `SELECT u.*
+    const result = await db.query(
+      `SELECT 
+          u.user_id, 
+          u.user_name, 
+          u.password, 
+          r.role_name AS master_role,
+          sp.role_name AS sales_role,
+          sp.industry,
+          sp.branch
        FROM users u 
-       WHERE LOWER(u.user_email) = LOWER('admin@company.com')`,
-      // [email]
+       JOIN role r ON u.role_id = r.role_id 
+       LEFT JOIN sales_person sp ON u.user_id = sp.user_id
+       WHERE u.user_email = $1`, 
+      [email]
     );
-
-    console.log("QUERY RESULT ROWS:", result);
 
     const user = result.rows[0];
 
-    console.log("USER FOUND:", user);
+    if (user && user.password === password) {
+      const finalRoleName = user.sales_role || user.master_role;
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User tidak ditemukan" },
-        { status: 401 }
-      );
-    }
+      
+      const sessionData = JSON.stringify({
+        user_id: user.user_id,
+        user_name: user.user_name,
+        role_name: finalRoleName,
+        industry: user.industry,
+        branch: user.branch
+      });
 
-    if (user.password?.trim() !== password?.trim()) {
-      return NextResponse.json(
-        { error: "Password salah" },
-        { status: 401 }
-      );
-    }
+      
+      const response = NextResponse.json({
+        success: true,
+        message: "Login Berhasil",
+        user: {
+          user_id: user.user_id,
+          user_name: user.user_name,
+          role_name: finalRoleName,
+          industry: user.industry,
+          branch: user.branch
+        }
+      });
 
-    return NextResponse.json({
-      message: "Login Berhasil",
-      user: {
-        id: user.user_id,
-        name: user.user_name,
-        role: user.role_name || "No Role",
-      },
+    // SET COOKIES HERE
+    response.cookies.set("email", email, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24,
+    });
+    response.cookies.set("password", password, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24,
+    });
+    response.cookies.set("session", sessionData, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24,
     });
 
-  } catch (error: any) {
-    console.error("LOGIN ERROR:", error);
+    response.cookies.set("user_id", user.user_id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24,
+    });
+      
+      
+      // setCookie('session', sessionData, {
+      //   maxAge: 60 * 60 * 24, 
+      //   path: '/',
+      //   httpOnly: true, 
+      // });
+      
+      // setCookie('email', email, {
+      //   maxAge: 60 * 60 * 24, 
+      //   path: '/',
+      //   httpOnly: true, 
+      // });
+      
+      // setCookie('password', password, {
+      //   maxAge: 60 * 60 * 24, 
+      //   path: '/',
+      //   httpOnly: true, 
+      // });
 
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+      return response; 
+    }
+
+    return NextResponse.json({ error: "Email atau Password salah" }, { status: 401 });
+
+  } catch (error: any) {
+    console.error("LOGIN API ERROR:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

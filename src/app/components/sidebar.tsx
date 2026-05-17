@@ -1,18 +1,47 @@
 "use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation'; // 💡 1. Tambahkan import useRouter
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter(); // 💡 2. Inisialisasi hook router
 
   const menuItems = [
     { name: 'Dashboard', href: '/admin/dashboard' },
     { name: 'Tickets', href: '/admin/ticket' },
     { name: 'Report', href: '/admin/report' },
-    { name: 'Settings', href: '/admin/setting' },
+    { name: 'Profile', href: '/admin/profile' },
   ];
+
+  // 💡 3. Buat fungsi eksekutor logout
+  const handleLogout = async () => {
+  const confirmLogout = window.confirm(
+    "Apakah Anda yakin ingin keluar dari sistem?"
+  );
+
+  if (!confirmLogout) return;
+
+  try {
+    const response = await fetch("/api/logout", {
+      method: "POST",
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      localStorage.removeItem("user");
+
+      console.log("=== LOGOUT SUCCESSFUL ===");
+
+      router.replace("/auth/login");
+    }
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+};
 
   return (
     <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen shrink-0 z-30">
@@ -49,7 +78,11 @@ export default function Sidebar() {
 
       {/* LOGOUT */}
       <div className="p-8 border-t border-gray-50">
-        <div className="text-[10px] font-black text-red-400 uppercase tracking-widest cursor-pointer hover:text-red-600">
+        {/* 💡 4. Pasang event onClick ke elemen text Log Out */}
+        <div 
+          onClick={handleLogout}
+          className="text-[10px] font-black text-red-400 uppercase tracking-widest cursor-pointer hover:text-red-600 transition-all"
+        >
           Log Out
         </div>
       </div>

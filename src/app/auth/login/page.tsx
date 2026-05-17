@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("admin@company.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("dimas@company.com");
+  const [password, setPassword] = useState("Dimas123");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -16,11 +16,11 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage("");
 
-    // DEBUG (hapus kalau sudah production)
-    console.log("EMAIL SENT:", email);
-    console.log("PASSWORD SENT:", password);
+    console.log("=== TRYING TO LOGIN ===");
+    console.log("EMAIL:", email);
 
     try {
+      // Menembak endpoint API login baru yang sudah kita LEFT JOIN ke sales_person
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,18 +28,18 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log("API AUTH RESPONSE:", data);
 
-      console.log("API RESPONSE:", data);
-
-      if (response.ok) {
+      if (response.ok && data.success) {
         localStorage.setItem("user", JSON.stringify(data.user));
+        
         router.push("/admin/dashboard");
       } else {
-        setErrorMessage(data.error || "Login gagal, cek email/password kamu.");
+        setErrorMessage(data.error || "Login gagal, cek kembali email/password kamu.");
       }
     } catch (error) {
-      console.error(error);
-      setErrorMessage("Koneksi ke server bermasalah.");
+      console.error("Login Client Error:", error);
+      setErrorMessage("Koneksi ke server auth bermasalah.");
     } finally {
       setIsLoading(false);
     }
@@ -49,16 +49,26 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb] p-6">
       <div className="w-full max-w-[450px] bg-white rounded-[40px] shadow-sm border border-gray-100 p-10 space-y-8">
 
+        {/* LOGO ATAU TITLE */}
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+            Sign In Account
+          </h2>
+          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest">
+            Enter your credentials to access system
+          </p>
+        </div>
+
         <form onSubmit={handleLogin} className="space-y-5">
 
-          {/* EMAIL */}
+          {/* EMAIL INPUT */}
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase ml-1 tracking-widest">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest">
               Email Address
             </label>
-
             <input
               type="email"
+              autoComplete="username"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -67,13 +77,12 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* PASSWORD */}
+          {/* PASSWORD INPUT */}
           <div className="space-y-2">
             <div className="flex justify-between items-center ml-1">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-widest">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 Password
               </label>
-
               <a
                 href="#"
                 className="text-[10px] font-bold text-orange-500 hover:underline uppercase tracking-widest"
@@ -81,9 +90,10 @@ export default function LoginPage() {
                 Forgot?
               </a>
             </div>
-
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -92,14 +102,16 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* ERROR MESSAGE */}
+          {/* ERROR ALERT */}
           {errorMessage && (
-            <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest text-center">
-              {errorMessage}
-            </p>
+            <div className="bg-red-50 border border-red-100 p-3 rounded-xl">
+              <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest text-center">
+                {errorMessage}
+              </p>
+            </div>
           )}
 
-          {/* BUTTON */}
+          {/* SUBMIT BUTTON */}
           <div className="pt-4">
             <button
               type="submit"
@@ -113,8 +125,8 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* FOOTER */}
-        <div className="text-center pt-4">
+        {/* FOOTER KANAN-KIRI BRANDING */}
+        <div className="text-center pt-4 border-t border-gray-50">
           <p className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.2em]">
             © 2026 PT. Bahtera Adi Jaya
           </p>

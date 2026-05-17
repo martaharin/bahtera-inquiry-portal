@@ -11,7 +11,7 @@ const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 export async function GET() {
   try {
     // ambil inquiry terbaru
-    const result = await db.query(`
+    const result = await await db.query(`
       SELECT
         industry,
         product_inquiry,
@@ -71,7 +71,7 @@ INSIGHT:
     const insightContent = assistantContent;
 
     // save database
-    await db.query(
+    await await db.query(
       `
       INSERT INTO ai_insight
       (

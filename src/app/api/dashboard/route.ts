@@ -1,20 +1,20 @@
-import { dbQuery } from '@/lib/db';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const totalRes = await dbQuery(`
+    const totalRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
     `);
 
-    const newRes = await dbQuery(`
+    const newRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
       WHERE status = 1
     `);
 
-    const progressRes = await dbQuery(`
+    const progressRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
       WHERE status = 2
@@ -24,7 +24,7 @@ export async function GET() {
     // RECENT TICKETS
     // =======================
 
-    const recentRes = await dbQuery(`
+    const recentRes = await db.query(`
       SELECT 
         t.ticket_id,
         t.status,

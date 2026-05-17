@@ -16,14 +16,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-10 sticky top-0 z-20 shrink-0">
           <div>
             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
-              System Management
+              Inquiry Management
             </h2>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-black shadow-sm border border-orange-200">
-              A
-            </div>
           </div>
         </header>
         

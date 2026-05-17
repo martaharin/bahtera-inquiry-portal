@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 1. Save user message
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       leadData.consent_to_contact ?? false,
     ];
 
-    await db.query(
+    await await db.query(
       `
   INSERT INTO public.inquiry (
     created_at,
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Save user message
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
       leadData.consent_to_contact ?? false,
     ];
 
-    await db.query(
+    await await db.query(
       `
   INSERT INTO public.inquiry (
     created_at,
@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
 //     }
 
 //     // 1. Save user message
-//     const result = await db.query(
+//     const result = await await db.query(
 //       `
 //       SELECT *
 //       FROM chat_messages
@@ -452,7 +452,7 @@ export async function POST(request: NextRequest) {
 //       leadData.consent_to_contact ?? false,
 //     ];
 
-//     await db.query(
+//     await await db.query(
 //       `
 //   INSERT INTO inquiry (
 //     session_id,
