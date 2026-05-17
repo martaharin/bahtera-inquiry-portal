@@ -7,7 +7,6 @@ import StatCard from '../../components/statcard';
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
-  // Dashboard states
   const [stats, setStats] = useState({
     total: 0,
     new: 0,
