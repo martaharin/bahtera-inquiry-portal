@@ -22,4 +22,5 @@ Rules:
 - Do not guess.
 - Keep null if unknown.
 - consent_to_contact is true only if user clearly agrees to be contacted.
-- type is filled with purchase or supply
+- summary the conversation and decide the intention for purchase or supply as the type
+- type cannot be empty
