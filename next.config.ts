@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  allowedDevOrigins: ["laptop-vj1eb3k0.tail339ed3.ts.net"],
+
   async headers() {
     return [
       {
