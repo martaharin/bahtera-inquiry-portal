@@ -6,7 +6,8 @@ const client = new Cerebras({
   apiKey: process.env["CEREBRAS_API_KEY"],
 });
 
-const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
+const cerebras_model =
+  process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
 export async function GET() {
   try {
@@ -16,6 +17,7 @@ export async function GET() {
         industry,
         product_inquiry,
         reason_for_inquiry,
+        location,
         created_at
       FROM inquiry
       ORDER BY created_at DESC
@@ -26,33 +28,45 @@ export async function GET() {
 
     // prompt AI
     const prompt = `
-You are an AI business analyst.
+You are a professional business analyst AI.
 
-Analyze the inquiry data below and generate:
-
-1. Insight title
-2. Professional business insight
+Analyze customer inquiry data and generate business insight.
 
 DATA:
 ${JSON.stringify(inquiryData, null, 2)}
 
-FORMAT:
-TITLE:
+STRICT FORMAT:
+
+TITLE: [one short business insight title only]
+
 INSIGHT:
+- key trend
+- most requested products
+- market opportunity
+- recommended business action
+
+IMPORTANT:
+- Return plain text only
+- Do NOT use markdown
+- Do NOT use **
+- Do NOT skip TITLE
+- TITLE must always contain text
 `;
 
     // AI generate
-    const completion: any = await client.chat.completions.create({
-      model: cerebras_model,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
+    const completion: any =
+      await client.chat.completions.create({
+        model: cerebras_model,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      });
 
-    const assistantContent = completion.choices[0]?.message?.content;
+    const assistantContent =
+      completion.choices[0]?.message?.content;
 
     if (!assistantContent) {
       return NextResponse.json(
@@ -65,10 +79,33 @@ INSIGHT:
       );
     }
 
-    // parsing
-    const insightTitle = "AI Generated Business Insight";
+    const titleMatch =
+    assistantContent.match(/TITLE:\s*(.*)/i);
 
-    const insightContent = assistantContent;
+    const insightMatch =
+    assistantContent.match(/INSIGHT:\s*([\s\S]*)/i);
+
+    let insightTitle = titleMatch
+    ? titleMatch[1].trim()
+    : "";
+
+    let insightContent = insightMatch
+    ? insightMatch[1].trim()
+    : assistantContent;
+
+  // clean markdown symbol
+  insightTitle = insightTitle
+    .replace(/\*/g, "")
+    .trim();
+
+  insightContent = insightContent
+    .replace(/\*\*/g, "")
+    .trim();
+
+  // fallback title
+  if (!insightTitle || insightTitle.length < 3) {
+    insightTitle = "AI Generated Business Insight";
+  }
 
     // save database
     await await db.query(

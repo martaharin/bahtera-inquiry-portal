@@ -80,19 +80,32 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const requiredFields = ["name", "company", "phone", "location", "industry"];
+    function hasValue(value: unknown) {
+      return (
+        value !== null && value !== undefined && String(value).trim() !== ""
+      );
+    }
 
-    const missingFields = requiredFields.filter((field) => {
-      return !leadData[field] || String(leadData[field]).trim() === "";
+    const mandatoryFields = ["industry", "consent_to_contact"];
+
+    const alternativeGroups = [
+      ["name", "company"],
+      ["email", "phone"],
+    ];
+
+    const missingMandatoryFields = mandatoryFields.filter((field) => {
+      return !hasValue(leadData[field]);
     });
 
-    if (missingFields.length > 0) {
-      return NextResponse.json({
-        needs_more_info: true,
-        missing_fields: missingFields,
-        message: leadData.request ?? assistantContent,
-      });
-    }
+    const missingAlternativeGroups = alternativeGroups.filter((group) => {
+      return !group.some((field) => hasValue(leadData[field]));
+    });
+
+    const isComplete =
+      missingMandatoryFields.length === 0 &&
+      missingAlternativeGroups.length === 0;
+
+    const ticketStatus = isComplete ? 1 : 4;
     // const leadData = {
     //   name: "Sinta",
     //   company: "PT Adiadi Jakarta",
@@ -121,9 +134,10 @@ export async function GET(request: NextRequest) {
       leadData.product_inquiry ?? "",
       leadData.reason_for_inquiry ?? "",
       leadData.consent_to_contact ?? false,
+      leadData.type ?? "other",
     ];
 
-    await await db.query(
+    const insertInquiry = await db.query(
       `
   INSERT INTO public.inquiry (
     created_at,
@@ -138,6 +152,7 @@ export async function GET(request: NextRequest) {
     product_inquiry,
     reason_for_inquiry,
     consent_to_contact,
+    "type",
     updated_at
   )
   VALUES (
@@ -153,6 +168,7 @@ export async function GET(request: NextRequest) {
     $9,
     $10,
     $11,
+    $12,
     CURRENT_TIMESTAMP
   )
   ON CONFLICT (session_id)
@@ -167,15 +183,33 @@ export async function GET(request: NextRequest) {
     product_inquiry = COALESCE(EXCLUDED.product_inquiry, inquiry.product_inquiry),
     reason_for_inquiry = COALESCE(EXCLUDED.reason_for_inquiry, inquiry.reason_for_inquiry),
     consent_to_contact = COALESCE(EXCLUDED.consent_to_contact, inquiry.consent_to_contact),
+    "type" = COALESCE(EXCLUDED."type", inquiry."type"),
     updated_at = CURRENT_TIMESTAMP
+  RETURNING inquiry_id, consent_to_contact
   `,
       values,
     );
+
+    const inquiryId = insertInquiry.rows[0];
+
+    const userResult = await db.query(
+      `
+      INSERT INTO ticket (inquiry_id, status)
+      VALUES ($1, $2)
+      ON CONFLICT (inquiry_id)
+        DO UPDATE SET
+          status = EXCLUDED.status
+      RETURNING ticket_id, created_at
+      `,
+      [inquiryId.inquiry_id, ticketStatus],
+    );
+    const ticketId = userResult.rows[0];
 
     return NextResponse.json({
       success: true,
       message: "Inquiry saved successfully",
       inquiry: leadData,
+      ticket: ticketId,
     });
   } catch (error) {
     console.error("Create chat message error:", error);
@@ -254,19 +288,32 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const requiredFields = ["name", "company", "phone", "location", "industry"];
+    function hasValue(value: unknown) {
+      return (
+        value !== null && value !== undefined && String(value).trim() !== ""
+      );
+    }
 
-    const missingFields = requiredFields.filter((field) => {
-      return !leadData[field] || String(leadData[field]).trim() === "";
+    const mandatoryFields = ["industry", "consent_to_contact"];
+
+    const alternativeGroups = [
+      ["name", "company"],
+      ["email", "phone"],
+    ];
+
+    const missingMandatoryFields = mandatoryFields.filter((field) => {
+      return !hasValue(leadData[field]);
     });
 
-    if (missingFields.length > 0) {
-      return NextResponse.json({
-        needs_more_info: true,
-        missing_fields: missingFields,
-        message: leadData.request ?? assistantContent,
-      });
-    }
+    const missingAlternativeGroups = alternativeGroups.filter((group) => {
+      return !group.some((field) => hasValue(leadData[field]));
+    });
+
+    const isComplete =
+      missingMandatoryFields.length === 0 &&
+      missingAlternativeGroups.length === 0;
+
+    const ticketStatus = isComplete ? 1 : 4;
     // const leadData = {
     //   name: "Sinta",
     //   company: "PT Adiadi Jakarta",
@@ -295,9 +342,10 @@ export async function POST(request: NextRequest) {
       leadData.product_inquiry ?? "",
       leadData.reason_for_inquiry ?? "",
       leadData.consent_to_contact ?? false,
+      leadData.type ?? "other",
     ];
 
-    await await db.query(
+    const insertInquiry = await db.query(
       `
   INSERT INTO public.inquiry (
     created_at,
@@ -312,6 +360,7 @@ export async function POST(request: NextRequest) {
     product_inquiry,
     reason_for_inquiry,
     consent_to_contact,
+    "type",
     updated_at
   )
   VALUES (
@@ -327,6 +376,7 @@ export async function POST(request: NextRequest) {
     $9,
     $10,
     $11,
+    $12,
     CURRENT_TIMESTAMP
   )
   ON CONFLICT (session_id)
@@ -341,15 +391,33 @@ export async function POST(request: NextRequest) {
     product_inquiry = COALESCE(EXCLUDED.product_inquiry, inquiry.product_inquiry),
     reason_for_inquiry = COALESCE(EXCLUDED.reason_for_inquiry, inquiry.reason_for_inquiry),
     consent_to_contact = COALESCE(EXCLUDED.consent_to_contact, inquiry.consent_to_contact),
+    "type" = COALESCE(EXCLUDED."type", inquiry."type"),
     updated_at = CURRENT_TIMESTAMP
+  RETURNING inquiry_id, consent_to_contact
   `,
       values,
     );
+
+    const inquiryId = insertInquiry.rows[0];
+
+    const userResult = await db.query(
+      `
+      INSERT INTO ticket (inquiry_id, status)
+      VALUES ($1, $2)
+      ON CONFLICT (inquiry_id)
+        DO UPDATE SET
+          status = EXCLUDED.status
+      RETURNING ticket_id, created_at
+      `,
+      [inquiryId.inquiry_id, ticketStatus],
+    );
+    const ticketId = userResult.rows[0];
 
     return NextResponse.json({
       success: true,
       message: "Inquiry saved successfully",
       inquiry: leadData,
+      ticket: ticketId,
     });
   } catch (error) {
     console.error("Create chat message error:", error);
