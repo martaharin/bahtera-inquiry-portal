@@ -20,7 +20,7 @@ export default function ReportPage() {
             color: "#1e293b",
           }}
         >
-          AI Customer Insight Dashboard
+          Dashboard Report
         </h1>
 
         <p
@@ -34,7 +34,7 @@ export default function ReportPage() {
       </div>
 
       <iframe
-        src="https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60"
+        src="https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60/page/QpoqF"
         width="100%"
         height="900"
         style={{
