@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Save user message
-    const userResult = await db.query(
+    const userResult = await await db.query(
       `
       INSERT INTO chat_messages (session_id, role, content)
       VALUES ($1, $2, $3)
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     );
 
     // 2. Load previous chat history
-    const historyResult = await db.query(
+    const historyResult = await await db.query(
       `
       SELECT role, content
       FROM chat_messages
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Save assistant message
-    const assistantResult = await db.query(
+    const assistantResult = await await db.query(
       `
       INSERT INTO chat_messages (session_id, role, content)
       VALUES ($1, $2, $3)

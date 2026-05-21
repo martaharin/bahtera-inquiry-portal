@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 1. Save user message
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -80,19 +80,32 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const requiredFields = ["name", "location", "industry"];
+    function hasValue(value: unknown) {
+      return (
+        value !== null && value !== undefined && String(value).trim() !== ""
+      );
+    }
 
-    const missingFields = requiredFields.filter((field) => {
-      return !leadData[field] || String(leadData[field]).trim() === "";
+    const mandatoryFields = ["industry", "consent_to_contact"];
+
+    const alternativeGroups = [
+      ["name", "company"],
+      ["email", "phone"],
+    ];
+
+    const missingMandatoryFields = mandatoryFields.filter((field) => {
+      return !hasValue(leadData[field]);
     });
 
-    if (missingFields.length > 0) {
-      return NextResponse.json({
-        needs_more_info: true,
-        missing_fields: missingFields,
-        message: leadData.request ?? assistantContent,
-      });
-    }
+    const missingAlternativeGroups = alternativeGroups.filter((group) => {
+      return !group.some((field) => hasValue(leadData[field]));
+    });
+
+    const isComplete =
+      missingMandatoryFields.length === 0 &&
+      missingAlternativeGroups.length === 0;
+
+    const ticketStatus = isComplete ? 1 : 4;
     // const leadData = {
     //   name: "Sinta",
     //   company: "PT Adiadi Jakarta",
@@ -108,6 +121,7 @@ export async function GET(request: NextRequest) {
     // };
 
     console.log(leadData);
+
     const values = [
       sessionId,
       leadData.name ?? "",
@@ -120,7 +134,7 @@ export async function GET(request: NextRequest) {
       leadData.product_inquiry ?? "",
       leadData.reason_for_inquiry ?? "",
       leadData.consent_to_contact ?? false,
-      leadData.type ?? false,
+      leadData.type ?? "other",
     ];
 
     const insertInquiry = await db.query(
@@ -138,7 +152,7 @@ export async function GET(request: NextRequest) {
     product_inquiry,
     reason_for_inquiry,
     consent_to_contact,
-    type,
+    "type",
     updated_at
   )
   VALUES (
@@ -169,22 +183,25 @@ export async function GET(request: NextRequest) {
     product_inquiry = COALESCE(EXCLUDED.product_inquiry, inquiry.product_inquiry),
     reason_for_inquiry = COALESCE(EXCLUDED.reason_for_inquiry, inquiry.reason_for_inquiry),
     consent_to_contact = COALESCE(EXCLUDED.consent_to_contact, inquiry.consent_to_contact),
-    type = COALESCE(EXCLUDED.type, inquiry.type),
+    "type" = COALESCE(EXCLUDED."type", inquiry."type"),
     updated_at = CURRENT_TIMESTAMP
   RETURNING inquiry_id, consent_to_contact
   `,
       values,
     );
 
-    const inquiryId = insertInquiry.rows[0].inquiry_id;
+    const inquiryId = insertInquiry.rows[0];
 
     const userResult = await db.query(
       `
-      INSERT INTO ticket (inquiry_id)
-      VALUES ($1)
+      INSERT INTO ticket (inquiry_id, status)
+      VALUES ($1, $2)
+      ON CONFLICT (inquiry_id)
+        DO UPDATE SET
+          status = EXCLUDED.status
       RETURNING ticket_id, created_at
       `,
-      [inquiryId],
+      [inquiryId.inquiry_id, ticketStatus],
     );
     const ticketId = userResult.rows[0];
 
@@ -215,7 +232,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Save user message
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -424,7 +441,7 @@ export async function POST(request: NextRequest) {
 //     }
 
 //     // 1. Save user message
-//     const result = await db.query(
+//     const result = await await db.query(
 //       `
 //       SELECT *
 //       FROM chat_messages
@@ -503,7 +520,7 @@ export async function POST(request: NextRequest) {
 //       leadData.consent_to_contact ?? false,
 //     ];
 
-//     await db.query(
+//     await await db.query(
 //       `
 //   INSERT INTO inquiry (
 //     session_id,

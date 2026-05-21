@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT DISTINCT session_id
       FROM chat_messages

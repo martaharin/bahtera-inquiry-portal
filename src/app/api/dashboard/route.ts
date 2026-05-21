@@ -1,38 +1,33 @@
-import { dbQuery } from '../../../src/lib/db';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-
-    // =======================
-    // STATS
-    // =======================
-
-    const totalRes = await dbQuery(`
+    const totalRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
     `);
 
-    const newRes = await dbQuery(`
+    const newRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
-      WHERE status_id = 1
+      WHERE status = 1
     `);
 
-    const progressRes = await dbQuery(`
+    const progressRes = await db.query(`
       SELECT COUNT(*)::int AS total
       FROM public.ticket
-      WHERE status_id = 2
+      WHERE status = 2
     `);
 
     // =======================
     // RECENT TICKETS
     // =======================
 
-    const recentRes = await dbQuery(`
+    const recentRes = await db.query(`
       SELECT 
         t.ticket_id,
-        t.status_id,
+        t.status,
         t.created_at,
 
         i.inquiry_id,
@@ -50,7 +45,7 @@ export async function GET() {
       LEFT JOIN public.inquiry i
       ON t.inquiry_id = i.inquiry_id
 
-      LEFT JOIN public."user" u
+      LEFT JOIN public."users" u
       ON t.assigned_user_id = u.user_id
 
       ORDER BY t.created_at DESC

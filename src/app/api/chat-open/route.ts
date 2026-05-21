@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 
 export async function GET() {
   try {
-    const result = await db.query(
+    const result = await await db.query(
       `
   INSERT INTO chat_sessions
   DEFAULT VALUES

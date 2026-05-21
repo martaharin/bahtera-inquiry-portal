@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await db.query(
+    const result = await await db.query(
       `
       SELECT *
       FROM chat_messages
@@ -118,7 +118,7 @@ Rules:
     }
 
     // 4. Save assistant message
-    // const assistantResult = await db.query(
+    // const assistantResult = await await db.query(
     //   `
     //   INSERT INTO chat_messages (session_id, role, content)
     //   VALUES ($1, $2, $3)

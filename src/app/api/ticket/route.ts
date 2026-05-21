@@ -1,19 +1,46 @@
-import { dbQuery } from '@/lib/db';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-// =======================
-// GET ALL TICKETS
-// =======================
-export async function GET() {
+export async function GET(req: Request) {
+
   try {
-    // Gunakan LEFT JOIN supaya kalau tabel ticket kosong, data inquiry tetap muncul
-    // Atau sebaliknya. Ini lebih aman untuk debugging.
-    const result = await dbQuery(`
+
+    const { searchParams } = new URL(req.url);
+
+    // =========================
+    // USER SESSION PARAMS
+    // =========================
+
+    const roleName = searchParams.get('role_name');
+    const userId = searchParams.get('user_id');
+    const industry = searchParams.get('industry');
+    const branch = searchParams.get('branch');
+
+    // =========================
+    // FILTER PARAMS
+    // =========================
+
+    const consent = searchParams.get('consent');
+    const status = searchParams.get('status');
+    const assignedTo = searchParams.get('assigned_to');
+    const startDate = searchParams.get('start_date');
+    const endDate = searchParams.get('end_date');
+
+    console.log(
+      `[TICKET API] CONNECTED TO DB - Role: ${roleName}, Industry: ${industry}, Branch: ${branch}`
+    );
+
+    // ====================================================
+    // MAIN TICKET QUERY
+    // ====================================================
+
+    let ticketsQuery = `
       SELECT
           t.ticket_id,
-          t.status_id,
+          t.status,
           t.assigned_user_id,
           t.created_at,
+
           i.inquiry_id,
           i.name,
           i.email,
@@ -21,88 +48,267 @@ export async function GET() {
           i.location,
           i.industry,
           i.product_inquiry,
-          i.consent_to_contact
+          i.consent_to_contact,
+
+          u.user_name AS assigned_to 
+
       FROM public.inquiry i
-      LEFT JOIN public.ticket t ON i.inquiry_id = t.inquiry_id
-      ORDER BY i.created_at DESC;
-    `);
 
-    return NextResponse.json(result.rows);
-  } catch (error: any) {
-    console.error("Database Error (GET):", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+      LEFT JOIN public.ticket t
+      ON i.inquiry_id = t.inquiry_id
 
-// =======================
-// CREATE NEW TICKET
-// =======================
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
+      LEFT JOIN public."users" u
+      ON t.assigned_user_id = u.user_id
+    `;
 
-    const {
-      company,
-      name,
-      email,
-      phone,
-      location,
-      industry,
-      industryScale,
-      productInquiry,
-      consent // Ini isinya "Yes" atau "No" dari form
-    } = body;
+    let ticketQueryParams: any[] = [];
+    let conditions: string[] = [];
 
-    // VALIDASI BOOLEAN: Database butuh true/false, bukan "Yes"/"No"
-    const isConsent = consent?.toLowerCase() === 'yes';
+    // ====================================================
+    // ROLE FILTER
+    // ====================================================
 
-    // 1. INSERT INTO INQUIRY
-    const inquiryResult = await dbQuery(
-      `
-      INSERT INTO public.inquiry (
-        company,
-        name,
-        email,
-        phone,
-        location,
-        industry,
-        industry_scale,
-        product_inquiry,
-        consent_to_contact
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING inquiry_id;
-      `,
-      [company, name, email, phone, location, industry, industryScale, productInquiry, isConsent]
+    // SALES STAFF
+    if (roleName === 'Sales Staff' && userId) {
+
+      ticketQueryParams.push(userId);
+
+      conditions.push(`
+        t.assigned_user_id = $${ticketQueryParams.length}
+      `);
+    }
+
+    // HEAD SALES
+    else if (
+      roleName === 'Head Sales' &&
+      industry &&
+      branch
+    ) {
+
+      ticketQueryParams.push(userId);
+      ticketQueryParams.push(industry);
+      ticketQueryParams.push(branch);
+
+      conditions.push(`
+        (
+          t.assigned_user_id = $1
+
+          OR
+
+          t.assigned_user_id IN (
+            SELECT user_id
+            FROM public.sales_person
+            WHERE industry = $2
+            AND branch = $3
+            AND role_name = 'Sales Staff'
+          )
+        )
+      `);
+    }
+
+    // ====================================================
+    // FILTER: CONSENT
+    // ====================================================
+
+    if (consent !== null && consent !== '') {
+
+      ticketQueryParams.push(consent === 'true');
+
+      conditions.push(`
+        i.consent_to_contact = $${ticketQueryParams.length}
+      `);
+    }
+
+    // ====================================================
+    // FILTER: STATUS
+    // ====================================================
+
+    if (status) {
+
+      ticketQueryParams.push(status);
+
+      conditions.push(`
+        t.status = $${ticketQueryParams.length}
+      `);
+    }
+
+    // ====================================================
+    // FILTER: ASSIGNED TO
+    // ====================================================
+
+    if (assignedTo) {
+
+      ticketQueryParams.push(assignedTo);
+
+      conditions.push(`
+        t.assigned_user_id = $${ticketQueryParams.length}
+      `);
+    }
+
+    // ====================================================
+    // FILTER: DATE RANGE
+    // ====================================================
+
+    if (startDate && endDate) {
+
+      ticketQueryParams.push(startDate);
+      ticketQueryParams.push(endDate);
+
+      conditions.push(`
+        DATE(t.created_at)
+        BETWEEN $${ticketQueryParams.length - 1}
+        AND $${ticketQueryParams.length}
+      `);
+    }
+
+    // ====================================================
+    // APPLY CONDITIONS
+    // ====================================================
+
+    if (conditions.length > 0) {
+
+      ticketsQuery += `
+        WHERE ${conditions.join(' AND ')}
+      `;
+    }
+
+    // ====================================================
+    // ORDER
+    // ====================================================
+
+    ticketsQuery += `
+      ORDER BY t.created_at DESC;
+    `;
+
+    // ====================================================
+    // EXECUTE QUERY
+    // ====================================================
+
+    const ticketsResult = await db.query(
+      ticketsQuery,
+      ticketQueryParams
     );
 
-    const inquiryId = inquiryResult.rows[0].inquiry_id;
+    // ====================================================
+    // STATS QUERY
+    // ====================================================
 
-    // 2. INSERT INTO TICKET
-    // Pastikan status_id 1 memang ada di tabel 'status' kamu
-    const ticketResult = await dbQuery(
-      `
-      INSERT INTO public.ticket (
-        inquiry_id,
-        status_id,
-        created_at
-      )
-      VALUES ($1, 1, NOW())
-      RETURNING *;
-      `,
-      [inquiryId]
+    let statsQuery = '';
+    let statsQueryParams: any[] = [];
+
+    // SALES STAFF
+    if (roleName === 'Sales Staff' && userId) {
+
+      statsQuery = `
+        SELECT
+          u.user_id,
+          u.user_name,
+          COUNT(t.ticket_id)::int AS active_tickets_count
+
+        FROM public."users" u
+
+        LEFT JOIN public.ticket t
+        ON u.user_id = t.assigned_user_id
+        AND t.status IN (1, 2)
+
+        WHERE u.user_id = $1
+
+        GROUP BY u.user_id, u.user_name;
+      `;
+
+      statsQueryParams.push(userId);
+    }
+
+    // HEAD SALES
+    else if (
+      roleName === 'Head Sales' &&
+      industry &&
+      branch
+    ) {
+
+      statsQuery = `
+        SELECT
+          u.user_id,
+          u.user_name,
+          COUNT(t.ticket_id)::int AS active_tickets_count
+
+        FROM public."users" u
+
+        LEFT JOIN public.ticket t
+        ON u.user_id = t.assigned_user_id
+        AND t.status IN (1, 2)
+
+        WHERE u.user_id IN (
+          SELECT user_id
+          FROM public.sales_person
+          WHERE industry = $1
+          AND branch = $2
+          AND role_name = 'Sales Staff'
+        )
+
+        GROUP BY u.user_id, u.user_name
+
+        ORDER BY u.user_name ASC;
+      `;
+
+      statsQueryParams.push(industry, branch);
+    }
+
+    // ADMIN
+    else {
+
+      statsQuery = `
+        SELECT
+          u.user_id,
+          u.user_name,
+          COUNT(t.ticket_id)::int AS active_tickets_count
+
+        FROM public."users" u
+
+        LEFT JOIN public.ticket t
+        ON u.user_id = t.assigned_user_id
+        AND t.status IN (1, 2)
+
+        GROUP BY u.user_id, u.user_name
+
+        ORDER BY u.user_name ASC;
+      `;
+    }
+
+    // ====================================================
+    // EXECUTE STATS
+    // ====================================================
+
+    const statsResult = await db.query(
+      statsQuery,
+      statsQueryParams
     );
 
-    return NextResponse.json({ 
-      success: true, 
-      ticket: ticketResult.rows[0] 
-    }, { status: 201 });
+    // ====================================================
+    // RESPONSE
+    // ====================================================
+
+    return NextResponse.json({
+      success: true,
+      tickets: ticketsResult.rows,
+      stats: statsResult.rows
+    });
 
   } catch (error: any) {
-    console.error("POST Ticket Error:", error);
+
+    console.error(
+      "Database Error (GET Tickets Final):",
+      error
+    );
+
     return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
+      {
+        success: false,
+        error: error.message
+      },
+      {
+        status: 500
+      }
     );
   }
 }
