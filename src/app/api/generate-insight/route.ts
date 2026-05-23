@@ -6,12 +6,10 @@ const client = new Cerebras({
   apiKey: process.env["CEREBRAS_API_KEY"],
 });
 
-const cerebras_model =
-  process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
+const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
 export async function GET() {
   try {
-    // ambil inquiry terbaru
     const result = await await db.query(`
       SELECT
         industry,
@@ -26,7 +24,6 @@ export async function GET() {
 
     const inquiryData = result.rows;
 
-    // prompt AI
     const prompt = `
 You are a professional business analyst AI.
 
@@ -53,20 +50,17 @@ IMPORTANT:
 - TITLE must always contain text
 `;
 
-    // AI generate
-    const completion: any =
-      await client.chat.completions.create({
-        model: cerebras_model,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      });
+    const completion: any = await client.chat.completions.create({
+      model: cerebras_model,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
 
-    const assistantContent =
-      completion.choices[0]?.message?.content;
+    const assistantContent = completion.choices[0]?.message?.content;
 
     if (!assistantContent) {
       return NextResponse.json(
@@ -79,35 +73,24 @@ IMPORTANT:
       );
     }
 
-    const titleMatch =
-    assistantContent.match(/TITLE:\s*(.*)/i);
+    const titleMatch = assistantContent.match(/TITLE:\s*(.*)/i);
 
-    const insightMatch =
-    assistantContent.match(/INSIGHT:\s*([\s\S]*)/i);
+    const insightMatch = assistantContent.match(/INSIGHT:\s*([\s\S]*)/i);
 
-    let insightTitle = titleMatch
-    ? titleMatch[1].trim()
-    : "";
+    let insightTitle = titleMatch ? titleMatch[1].trim() : "";
 
     let insightContent = insightMatch
-    ? insightMatch[1].trim()
-    : assistantContent;
+      ? insightMatch[1].trim()
+      : assistantContent;
 
-  // clean markdown symbol
-  insightTitle = insightTitle
-    .replace(/\*/g, "")
-    .trim();
+    insightTitle = insightTitle.replace(/\*/g, "").trim();
 
-  insightContent = insightContent
-    .replace(/\*\*/g, "")
-    .trim();
+    insightContent = insightContent.replace(/\*\*/g, "").trim();
 
-  // fallback title
-  if (!insightTitle || insightTitle.length < 3) {
-    insightTitle = "AI Generated Business Insight";
-  }
+    if (!insightTitle || insightTitle.length < 3) {
+      insightTitle = "AI Generated Business Insight";
+    }
 
-    // save database
     await await db.query(
       `
       INSERT INTO ai_insight

@@ -183,7 +183,6 @@ export async function POST(request: NextRequest) {
       {
         role: "system",
         content: initialMessage,
-        // content: "initialMessage",
       },
       ...historyResult.rows.map((row: any) => ({
         role: row.role,
@@ -191,7 +190,6 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    // 3. Call AI without streaming
     const completion: any = await client.chat.completions.create({
       model: cerebras_model,
       messages: aiMessages,
