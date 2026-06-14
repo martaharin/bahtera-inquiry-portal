@@ -13,6 +13,7 @@ interface TicketData {
   company: string;
   location: string;
   industry: string;
+  reason_for_inquiry: string;
   product_inquiry: string;
   created_at: string;
   assigned_user_id: string | null;
@@ -124,6 +125,9 @@ export default function DetailTicketPage({
           const resultTicket = await resTicket.json();
           if (resultTicket.success) {
             const ticketData = resultTicket.data;
+
+            console.log("TICKET DATA:", ticketData);
+
             setTicket(ticketData);
             setChatMessages(resultTicket.chatMessages || []);
 
@@ -215,10 +219,10 @@ export default function DetailTicketPage({
         );
         setIsEditing(false);
       } else {
-        alert("Gagal mengupdate data tiket");
+        alert("Failed to update ticket data");
       }
     } catch (err) {
-      alert("Terjadi kesalahan saat menyimpan data");
+      alert("Unable to save the data");
     } finally {
       setIsSaving(false);
     }
@@ -226,11 +230,11 @@ export default function DetailTicketPage({
 
   const handleDeleteTicket = async () => {
     if (!isAdmin) {
-      alert("Anda tidak memiliki izin untuk menghapus tiket ini");
+      alert("You do not have permission to delete this ticket");
       return;
     }
     const confirmDelete = window.confirm(
-      "Apakah Anda yakin ingin menghapus tiket ini?"
+      "Are you sure you want to delete this ticket?"
     );
     if (!confirmDelete) return;
 
@@ -243,13 +247,13 @@ export default function DetailTicketPage({
       console.log("DELETE RESPONSE:", result);
 
       if (res.ok) {
-        alert("Tiket berhasil dihapus!");
+        alert("Ticket deleted successfully!");
         router.push("/admin/ticket");
       } else {
-        alert("Gagal menghapus tiket");
+        alert("Failed to delete ticket");
       }
     } catch (err) {
-      alert("Terjadi kesalahan saat menghapus data");
+      alert("An error occurred while deleting the data");
     }
   };
 
@@ -360,8 +364,10 @@ export default function DetailTicketPage({
             </span>
 
             <h1 className="text-2xl font-black text-gray-900">
-              Inquiry: {ticket.product_inquiry}
+              Inquiry: {ticket.reason_for_inquiry}
             </h1>
+
+            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 h-8">Product: {ticket.product_inquiry} </span>
 
             {/* ASSIGNED TO */}
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 h-8">
