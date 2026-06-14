@@ -48,8 +48,8 @@ export async function GET(req: Request) {
           i.location,
           i.industry,
           i.product_inquiry,
+          i.reason_for_inquiry,
           i.consent_to_contact,
-
           u.user_name AS assigned_to 
 
       FROM public.inquiry i
@@ -197,7 +197,7 @@ export async function GET(req: Request) {
     let statsQueryParams: any[] = [];
 
     // SALES STAFF
-    if (roleName === 'Sales Staff' && userId) {
+    if (roleName === 'sales staff' && userId) {
 
       statsQuery = `
         SELECT
@@ -221,12 +221,13 @@ export async function GET(req: Request) {
 
     // HEAD SALES
     else if (
-      roleName === 'Head Sales' &&
+      roleName === 'head sales' &&
       industry &&
       branch
     ) {
 
       statsQuery = `
+      
         SELECT
           u.user_id,
           u.user_name,
@@ -241,9 +242,9 @@ export async function GET(req: Request) {
         WHERE u.user_id IN (
           SELECT user_id
           FROM public.sales_person
-          WHERE industry = $1
-          AND branch = $2
-          AND role_name = 'Sales Staff'
+          WHERE LOWER(industry) = LOWER($1)
+          AND LOWER(branch) = LOWER($2)
+          AND LOWER (role_name) = 'sales staff'
         )
 
         GROUP BY u.user_id, u.user_name
@@ -265,9 +266,14 @@ export async function GET(req: Request) {
 
         FROM public."users" u
 
+        INNER JOIN public.sales_person sp
+        ON u.user_id = sp.user_id
+
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
         AND t.status IN (1, 2)
+
+        WHERE LOWER(sp.role_name) = 'sales staff'
 
         GROUP BY u.user_id, u.user_name
 
@@ -283,6 +289,11 @@ export async function GET(req: Request) {
       statsQuery,
       statsQueryParams
     );
+
+    console.log("ROLE:", roleName);
+    console.log("INDUSTRY:", industry);
+    console.log("BRANCH:", branch);
+    console.log("STATS:", statsResult.rows);
 
     // ====================================================
     // RESPONSE

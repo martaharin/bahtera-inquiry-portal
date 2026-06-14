@@ -47,6 +47,7 @@ export async function GET(
         i.company,
         i.location,
         i.industry,
+        i.reason_for_inquiry,
         i.product_inquiry,
         i.consent_to_contact,
         i.session_id,
