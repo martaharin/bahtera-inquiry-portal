@@ -135,7 +135,8 @@ export async function GET(request: NextRequest) {
     $12,
     CURRENT_TIMESTAMP
   )
-  ON CONFLICT (session_id)
+  ON CONFLICT ON CONSTRAINT inquiry_session_id_unique
+
   DO UPDATE SET
     name = COALESCE(EXCLUDED.name, inquiry.name),
     company = COALESCE(EXCLUDED.company, inquiry.company),
@@ -304,7 +305,7 @@ export async function POST(request: NextRequest) {
     $12,
     CURRENT_TIMESTAMP
   )
-  ON CONFLICT (session_id)
+  ON CONFLICT ON CONSTRAINT inquiry_session_id_unique
   DO UPDATE SET
     name = COALESCE(EXCLUDED.name, inquiry.name),
     company = COALESCE(EXCLUDED.company, inquiry.company),
@@ -327,7 +328,7 @@ export async function POST(request: NextRequest) {
       `
       INSERT INTO ticket (inquiry_id, status)
       VALUES ($1, $2)
-      ON CONFLICT (inquiry_id)
+      ON CONFLICT ON CONSTRAINT ticket_inquiry_id_unique
         DO UPDATE SET
           status = EXCLUDED.status
       RETURNING ticket_id, created_at
