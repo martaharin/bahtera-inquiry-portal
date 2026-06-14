@@ -28,9 +28,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params; 
-    const ticketId = id;
+    const inquiryId = id;
 
-    if (!ticketId) {
+    if (!inquiryId) {
       return NextResponse.json(
         { success: false, error: "Ticket ID tidak ditemukan di params" },
         { status: 400 }
@@ -40,11 +40,6 @@ export async function GET(
     const result = await db.query(
       `
       SELECT 
-        t.ticket_id,
-        t.status,
-        t.assigned_user_id,
-        t.created_at,
-        t.converted_to_erp,
         i.inquiry_id,
         i.name,
         i.email,
@@ -55,14 +50,19 @@ export async function GET(
         i.product_inquiry,
         i.consent_to_contact,
         i.session_id,
+        t.ticket_id,
+        t.status,
+        t.assigned_user_id,
+        t.created_at,
+        t.converted_to_erp,
         u.user_name AS assigned_to
-      FROM public.ticket t
-      LEFT JOIN public.inquiry i ON t.inquiry_id = i.inquiry_id
+      FROM public.inquiry i
+      LEFT JOIN public.ticket t ON i.inquiry_id = t.inquiry_id
       LEFT JOIN public."users" u ON t.assigned_user_id = u.user_id
-      WHERE t.ticket_id = $1
+      WHERE i.inquiry_id = $1 OR t.ticket_id = $1
       LIMIT 1
       `,
-      [ticketId]
+      [inquiryId]
     );
 
     const row = result?.rows?.[0];

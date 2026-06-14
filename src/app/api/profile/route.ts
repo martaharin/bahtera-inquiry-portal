@@ -86,8 +86,8 @@ export async function PUT(req: Request) {
     const body = await req.json();
 
     const {
-      user_name,
-      user_email,
+      username,
+      email,
       password,
     } = body;
 
@@ -100,7 +100,7 @@ export async function PUT(req: Request) {
         password = $3
       WHERE user_id = $4
       `,
-      [user_name, user_email, password, userId]
+      [username, email, password, userId]
     );
 
     return NextResponse.json({

@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { decrypt } from "@/lib/session";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const email = cookieStore.get("email")?.value;
+    console.log (
+      "ALL COOKIES;",
+      cookieStore.getAll()
+    );
 
-    if (!email) {
+    const session =
+      cookieStore.get("session")?.value;
+
+    if (!session) {
       return NextResponse.json(
         {
           success: false,
@@ -17,38 +23,21 @@ export async function GET() {
       );
     }
 
-    // PERBAIKAN QUERY: Menggunakan nama tabel 'public.role' (tanpa s)
-    const result = await db.query(
-      `
-      SELECT 
-        u.user_id,
-        u.user_name,
-        u.role_id,
-        r.role_name,  -- <-- Mengambil nama role asli langsung dari tabel role
-        u.user_email
-      FROM public.users u
-      INNER JOIN public.role r ON u.role_id = r.role_id  -- <-- Diubah dari public.roles menjadi public.role
-      WHERE LOWER(u.user_email) = LOWER($1)
-      LIMIT 1
-      `,
-      [email]
-    );
+    const payload = await decrypt(session);
 
-    const user = result.rows[0];
-
-    if (!user) {
+    if (!payload) {
       return NextResponse.json(
         {
           success: false,
-          error: "User tidak ditemukan",
+          error: "Invalid session",
         },
-        { status: 404 }
+        { status: 401 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      user,
+      user: payload,
     });
 
   } catch (error: any) {

@@ -312,3 +312,110 @@ export async function GET(req: Request) {
     );
   }
 }
+
+//create ticket//
+export async function POST(req: Request) {
+
+  try {
+
+    const body = await req.json();
+
+    console.log("BODY:", body);
+
+    const {
+      company,
+      name,
+      email,
+      phone,
+      location,
+      industry,
+      industryScale,
+      productInquiry,
+      reason,
+      consent
+    } = body;
+
+    //insert inquiry//
+
+
+    const inquiryResult = await db.query(
+      `
+      INSERT INTO public.inquiry
+      (
+        company,
+        name,
+        email,
+        phone,
+        location,
+        industry,
+        industry_scale,
+        product_inquiry,
+        reason_for_inquiry,
+        consent_to_contact
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+      )
+      RETURNING inquiry_id;
+      `,
+      [
+        company,
+        name,
+        email,
+        phone,
+        location,
+        industry,
+        industryScale,
+        productInquiry,
+        reason,
+        consent
+      ]
+    );
+
+    // GET INQUIRY ID
+    const inquiryId =
+      inquiryResult.rows[0].inquiry_id;
+
+    // INSERT TICKET
+    await db.query(
+      `
+      INSERT INTO public.ticket
+      (
+        inquiry_id,
+        status,
+        created_at
+      )
+      VALUES
+      (
+        $1,
+        1,
+        NOW()
+      );
+      `,
+      [inquiryId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      inquiry_id: inquiryId
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      "Database Error (CREATE Ticket):",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message
+      },
+      {
+        status: 500
+      }
+    );
+  }
+}
