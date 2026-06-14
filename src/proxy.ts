@@ -1,6 +1,7 @@
 // proxy.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { decrypt } from "@/lib/session";
 
 const app_url = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -16,13 +17,12 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const email = request.cookies.get("email")?.value;
-  const password = request.cookies.get("password")?.value;
+  const session = request.cookies.get("session")?.value;
 
-  console.log("EMAIL:", email);
+  // console.log("EMAIL:", email);
 
   // ===== USER HAS COOKIE =====
-  if (email && password) {
+  if (session) {
     // prevent access login page after login
     if (pathname === "/auth/login") {
       return NextResponse.redirect(
@@ -31,25 +31,13 @@ export default async function proxy(request: NextRequest) {
     }
 
     try {
-      const response = await fetch(`${app_url}/api/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const payload = await decrypt(session);
 
-      const data = await response.json();
-
-      // valid session
-      if (response.ok && data.success) {
+      if (payload) {
         return NextResponse.next();
       }
     } catch (error) {
-      console.error("Proxy Auth Error:", error);
+      console.error("Session Invalid:", error);
     }
 
     // invalid cookie/session

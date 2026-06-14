@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StatCard from '@/app/components/statcard';
-// import StatCard from '@/components/statcard';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
+  // Dashboard states
   const [stats, setStats] = useState({
     total: 0,
     new: 0,
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
           {recentTickets.length === 0 ? (
 
-            <div className="bg-white p-10 rounded-3xl text-center font-bold text-gray-400 italic">
+            <div className="bg-white p-10 rounded-[24px] text-center font-bold text-gray-400 italic">
               No recent tickets found.
             </div>
 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
             recentTickets.map((ticket: any) => (
               <div
                 key={ticket.ticket_id}
-                className="grid grid-cols-6 items-center bg-white p-6 rounded-3xl border border-orange-50 shadow-sm text-[12px] font-medium text-gray-600 transition-all hover:shadow-md"
+                className="grid grid-cols-6 items-center bg-white p-6 rounded-[24px] border border-orange-50 shadow-sm text-[12px] font-medium text-gray-600 transition-all hover:shadow-md"
               >
 
                 {/* Inquiry */}
@@ -203,7 +203,7 @@ export default function DashboardPage() {
 
                 {/* Action */}
                 <div className="text-right">
-                  <Link href={`/admin/ticket/${ticket.ticket_id}`}>
+                  <Link href={`/admin/ticket/${ticket.ticket_id }`}>
                     <button className="text-[10px] font-black text-orange-400 hover:text-orange-600 transition-all uppercase tracking-[0.2em]">
                       View Details →
                     </button>

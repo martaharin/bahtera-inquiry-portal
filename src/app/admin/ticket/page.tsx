@@ -365,9 +365,10 @@ export default function TicketPage() {
                   <p className="font-bold text-gray-900">{ticket.name}</p>
                   <p className="text-[10px] text-gray-400 truncate">{ticket.email}</p>
                 </div>
-
+                
                 <div className="text-right">
-                  <Link href={`/admin/ticket/${ticket.ticket_id}`}>
+                  <Link href={
+                    `/admin/ticket/${ticket.ticket_id || ticket.inquiry_id}`}>
                     <button className="text-[10px] font-black text-orange-400 hover:text-orange-600 transition-all uppercase tracking-[0.2em] cursor-pointer">
                       View Details →
                     </button>

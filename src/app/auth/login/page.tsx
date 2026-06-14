@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("dimas@company.com");
-  const [password, setPassword] = useState("Dimas123");
+  const [email, setEmail] = useState("bagas@company.com");
+  const [password, setPassword] = useState("123456");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -84,7 +85,7 @@ export default function LoginPage() {
                 Password
               </label>
               <a
-                href="#"
+                href="/forgot-password"
                 className="text-[10px] font-bold text-orange-500 hover:underline uppercase tracking-widest"
               >
                 Forgot?
