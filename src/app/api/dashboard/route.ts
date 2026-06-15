@@ -28,9 +28,11 @@ export async function GET() {
       SELECT 
         t.ticket_id,
         t.status,
+        t.updated_at,
         t.created_at,
 
         i.inquiry_id,
+        i.reason_for_inquiry,
         i.product_inquiry,
         i.company,
         i.consent_to_contact,
@@ -48,7 +50,7 @@ export async function GET() {
       LEFT JOIN public."users" u
       ON t.assigned_user_id = u.user_id
 
-      ORDER BY t.created_at DESC
+      ORDER BY COALESCE(t.updated_at, t.created_at, i.created_at) DESC
       LIMIT 4
     `);
 
