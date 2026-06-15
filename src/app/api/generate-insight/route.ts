@@ -3,57 +3,72 @@ import { db } from "@/lib/db";
 import Cerebras from "@cerebras/cerebras_cloud_sdk";
 
 const client = new Cerebras({
-  apiKey: process.env["CEREBRAS_API_KEY"],
+  apiKey: process.env.CEREBRAS_API_KEY,
 });
 
 const cerebras_model =
-  process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
+  process.env.CEREBRAS_MODEL || "gpt-4.1";
 
 export async function GET() {
   try {
-    // ambil inquiry terbaru
-    const result = await await db.query(`
+    const result = await db.query(`
       SELECT
         industry,
         product_inquiry,
         reason_for_inquiry,
         location,
+        company,
         created_at
       FROM inquiry
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT 50
     `);
 
     const inquiryData = result.rows;
 
-    // prompt AI
-    const prompt = `
-You are a professional business analyst AI.
+    if (inquiryData.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: "No inquiry data found",
+      });
+    }
 
-Analyze customer inquiry data and generate business insight.
+    const prompt = `
+You are a Senior Business Intelligence Analyst.
+
+Analyze the customer inquiry data below and generate ONE strategic business insight.
 
 DATA:
 ${JSON.stringify(inquiryData, null, 2)}
 
-STRICT FORMAT:
+Focus on:
 
-TITLE: [one short business insight title only]
+1. Industry trend
+2. Product demand trend
+3. Customer behavior
+4. Market opportunity
+5. Recommended business action
+
+STRICT FORMAT
+
+TITLE:
+[short title]
+
+TYPE:
+[Industry Trend | Product Trend | Market Opportunity | Customer Behavior | Business Action]
 
 INSIGHT:
-- key trend
-- most requested products
-- market opportunity
-- recommended business action
+[2-4 sentences explaining the insight and recommendation]
 
-IMPORTANT:
-- Return plain text only
-- Do NOT use markdown
-- Do NOT use **
-- Do NOT skip TITLE
-- TITLE must always contain text
+RULES:
+- Professional business language
+- No markdown
+- No bullet points
+- Always return TITLE
+- Always return TYPE
+- Always return INSIGHT
 `;
 
-    // AI generate
     const completion: any =
       await client.chat.completions.create({
         model: cerebras_model,
@@ -66,70 +81,97 @@ IMPORTANT:
       });
 
     const assistantContent =
-      completion.choices[0]?.message?.content;
+      completion?.choices?.[0]?.message?.content;
 
     if (!assistantContent) {
       return NextResponse.json(
         {
+          success: false,
           error: "AI response empty",
         },
         {
           status: 500,
-        },
+        }
       );
     }
 
     const titleMatch =
-    assistantContent.match(/TITLE:\s*(.*)/i);
+      assistantContent.match(/TITLE:\s*(.*)/i);
+
+    const typeMatch =
+      assistantContent.match(/TYPE:\s*(.*)/i);
 
     const insightMatch =
-    assistantContent.match(/INSIGHT:\s*([\s\S]*)/i);
+      assistantContent.match(
+        /INSIGHT:\s*([\s\S]*)/i
+      );
 
     let insightTitle = titleMatch
-    ? titleMatch[1].trim()
-    : "";
+      ? titleMatch[1].trim()
+      : "";
+
+    let insightType = typeMatch
+      ? typeMatch[1].trim()
+      : "";
 
     let insightContent = insightMatch
-    ? insightMatch[1].trim()
-    : assistantContent;
+      ? insightMatch[1].trim()
+      : assistantContent;
 
-  // clean markdown symbol
-  insightTitle = insightTitle
-    .replace(/\*/g, "")
-    .trim();
+    insightTitle = insightTitle
+      .replace(/\*/g, "")
+      .trim();
 
-  insightContent = insightContent
-    .replace(/\*\*/g, "")
-    .trim();
+    insightType = insightType
+      .replace(/\*/g, "")
+      .trim();
 
-  // fallback title
-  if (!insightTitle || insightTitle.length < 3) {
-    insightTitle = "AI Generated Business Insight";
-  }
+    insightContent = insightContent
+      .replace(/\*/g, "")
+      .trim();
 
-    // save database
-    await await db.query(
+    if (!insightTitle || insightTitle.length < 3) {
+      insightTitle =
+        "AI Generated Business Insight";
+    }
+
+    if (!insightType || insightType.length < 3) {
+      insightType = "Business Action";
+    }
+
+    await db.query(
       `
       INSERT INTO ai_insight
       (
+        insight_type,
         insight_title,
         insight_content,
+        total_inquiry,
         created_at
       )
       VALUES
       (
         $1,
         $2,
+        $3,
+        $4,
         CURRENT_TIMESTAMP
       )
       `,
-      [insightTitle, insightContent],
+      [
+        insightType,
+        insightTitle,
+        insightContent,
+        inquiryData.length,
+      ]
     );
 
     return NextResponse.json({
       success: true,
+      insight_type: insightType,
       insight_title: insightTitle,
       insight_content: insightContent,
+      total_inquiry: inquiryData.length,
     });
   } catch (error: any) {
     console.error(error);
@@ -141,7 +183,7 @@ IMPORTANT:
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }
