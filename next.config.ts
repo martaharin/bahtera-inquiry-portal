@@ -3,7 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  
+
+  async redirects() {
+    return [
+      {
+        source: "/", // The path users try to visit
+        destination: "/auth/login", // The path you want to send them to
+        permanent: true, // true = 308 permanent, false = 307 temporary
+      },
+    ];
+  },
   async headers() {
     return [
       {
