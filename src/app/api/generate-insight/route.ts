@@ -6,12 +6,20 @@ const client = new Cerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
 
+<<<<<<< HEAD
 const cerebras_model =
   process.env.CEREBRAS_MODEL || "gpt-4.1";
 
 export async function GET() {
   try {
     const result = await db.query(`
+=======
+const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
+
+export async function GET() {
+  try {
+    const result = await await db.query(`
+>>>>>>> 30b7fa7eb7dc0a05fe51247d8ee7450cffdeb368
       SELECT
         industry,
         product_inquiry,
@@ -26,12 +34,17 @@ export async function GET() {
 
     const inquiryData = result.rows;
 
+<<<<<<< HEAD
     if (inquiryData.length === 0) {
       return NextResponse.json({
         success: false,
         error: "No inquiry data found",
       });
     }
+=======
+    const prompt = `
+You are a professional business analyst AI.
+>>>>>>> 30b7fa7eb7dc0a05fe51247d8ee7450cffdeb368
 
     const prompt = `
 You are a Senior Business Intelligence Analyst.
@@ -69,6 +82,7 @@ RULES:
 - Always return INSIGHT
 `;
 
+<<<<<<< HEAD
     const completion: any =
       await client.chat.completions.create({
         model: cerebras_model,
@@ -82,6 +96,19 @@ RULES:
 
     const assistantContent =
       completion?.choices?.[0]?.message?.content;
+=======
+    const completion: any = await client.chat.completions.create({
+      model: cerebras_model,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    const assistantContent = completion.choices[0]?.message?.content;
+>>>>>>> 30b7fa7eb7dc0a05fe51247d8ee7450cffdeb368
 
     if (!assistantContent) {
       return NextResponse.json(
@@ -95,6 +122,7 @@ RULES:
       );
     }
 
+<<<<<<< HEAD
     const titleMatch =
       assistantContent.match(/TITLE:\s*(.*)/i);
 
@@ -113,11 +141,19 @@ RULES:
     let insightType = typeMatch
       ? typeMatch[1].trim()
       : "";
+=======
+    const titleMatch = assistantContent.match(/TITLE:\s*(.*)/i);
+
+    const insightMatch = assistantContent.match(/INSIGHT:\s*([\s\S]*)/i);
+
+    let insightTitle = titleMatch ? titleMatch[1].trim() : "";
+>>>>>>> 30b7fa7eb7dc0a05fe51247d8ee7450cffdeb368
 
     let insightContent = insightMatch
       ? insightMatch[1].trim()
       : assistantContent;
 
+<<<<<<< HEAD
     insightTitle = insightTitle
       .replace(/\*/g, "")
       .trim();
@@ -140,6 +176,17 @@ RULES:
     }
 
     await db.query(
+=======
+    insightTitle = insightTitle.replace(/\*/g, "").trim();
+
+    insightContent = insightContent.replace(/\*\*/g, "").trim();
+
+    if (!insightTitle || insightTitle.length < 3) {
+      insightTitle = "AI Generated Business Insight";
+    }
+
+    await await db.query(
+>>>>>>> 30b7fa7eb7dc0a05fe51247d8ee7450cffdeb368
       `
       INSERT INTO ai_insight
       (

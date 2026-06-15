@@ -20,6 +20,7 @@ interface TicketListItem {
   company: string | null;
   location: string | null;
   industry: string | null;
+  reason_for_inquiry: string;
   product_inquiry: string;
   consent_to_contact: boolean;
   assigned_to: string | null;
@@ -175,33 +176,43 @@ export default function TicketPage() {
         )}
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.length === 0 ? (
-          <div className="col-span-3 bg-white p-6 rounded-[24px] border border-gray-100 text-center text-xs text-gray-400 italic">
-            Tidak ada ringkasan statistik performa karyawan untuk cakupan wilayah Anda.
-          </div>
-        ) : (
-          stats.map((userStat) => (
-            <div
-              key={userStat.user_id}
-              className="bg-white p-6 rounded-[24px] border border-orange-200 shadow-sm text-center flex flex-col justify-center items-center min-h-[160px]"
-            >
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <i className="fa-solid fa-user text-base text-gray-900"></i>
-                <h3 className="text-xl font-black text-gray-900">
-                  {userStat.user_name}
-                </h3>
-              </div>
-              <p className="text-[10px] font-medium text-gray-500">
+      <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="px-6 py-4 text-left text-xs font-black text-gray-400 uppercase tracking-widest">
+                Sales Staff
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest">
                 Total New & In Progress Ticket
-              </p>
-              <p className="text-4xl font-black text-gray-900 mt-3">
-                {userStat.active_tickets_count}
-              </p>
-            </div>
-          ))
-        )}
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {stats.map((userStat) => (
+              <tr
+                key={userStat.user_id}
+                className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+              >
+                <td className="px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <i className="fa-solid fa-user text-gray-500"></i>
+                    <span className="font-bold text-gray-900">
+                      {userStat.user_name}
+                    </span>
+                  </div>
+                </td>
+
+                <td className="px-6 py-3 text-center">
+                  <span className="text-m font-black text-gray-900">
+                    {userStat.active_tickets_count}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* FILTER */}
@@ -342,7 +353,7 @@ export default function TicketPage() {
               >
                 <div className="pr-6">
                   <div className="text-gray-900 font-bold truncate italic">
-                    "{ticket.product_inquiry}"
+                    "{ticket.reason_for_inquiry}"
                   </div>
                   <div className="text-[9px] font-black text-orange-400 uppercase tracking-widest mt-1">
                     {ticket.company || "No Company"}
@@ -365,9 +376,10 @@ export default function TicketPage() {
                   <p className="font-bold text-gray-900">{ticket.name}</p>
                   <p className="text-[10px] text-gray-400 truncate">{ticket.email}</p>
                 </div>
-
+                
                 <div className="text-right">
-                  <Link href={`/admin/ticket/${ticket.ticket_id}`}>
+                  <Link href={
+                    `/admin/ticket/${ticket.ticket_id || ticket.inquiry_id}`}>
                     <button className="text-[10px] font-black text-orange-400 hover:text-orange-600 transition-all uppercase tracking-[0.2em] cursor-pointer">
                       View Details →
                     </button>
