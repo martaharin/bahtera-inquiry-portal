@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import Cerebras from "@cerebras/cerebras_cloud_sdk";
 
 const client = new Cerebras({
-  apiKey: process.env["CEREBRAS_API_KEY"],
+  apiKey: process.env.CEREBRAS_API_KEY,
 });
 
 const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
@@ -16,10 +16,11 @@ export async function GET() {
         product_inquiry,
         reason_for_inquiry,
         location,
+        company,
         created_at
       FROM inquiry
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT 50
     `);
 
     const inquiryData = result.rows;
@@ -27,27 +28,40 @@ export async function GET() {
     const prompt = `
 You are a professional business analyst AI.
 
-Analyze customer inquiry data and generate business insight.
+    const prompt = `
+You are a Senior Business Intelligence Analyst.
+
+Analyze the customer inquiry data below and generate ONE strategic business insight.
 
 DATA:
 ${JSON.stringify(inquiryData, null, 2)}
 
-STRICT FORMAT:
+Focus on:
 
-TITLE: [one short business insight title only]
+1. Industry trend
+2. Product demand trend
+3. Customer behavior
+4. Market opportunity
+5. Recommended business action
+
+STRICT FORMAT
+
+TITLE:
+[short title]
+
+TYPE:
+[Industry Trend | Product Trend | Market Opportunity | Customer Behavior | Business Action]
 
 INSIGHT:
-- key trend
-- most requested products
-- market opportunity
-- recommended business action
+[2-4 sentences explaining the insight and recommendation]
 
-IMPORTANT:
-- Return plain text only
-- Do NOT use markdown
-- Do NOT use **
-- Do NOT skip TITLE
-- TITLE must always contain text
+RULES:
+- Professional business language
+- No markdown
+- No bullet points
+- Always return TITLE
+- Always return TYPE
+- Always return INSIGHT
 `;
 
     const completion: any = await client.chat.completions.create({
@@ -65,11 +79,12 @@ IMPORTANT:
     if (!assistantContent) {
       return NextResponse.json(
         {
+          success: false,
           error: "AI response empty",
         },
         {
           status: 500,
-        },
+        }
       );
     }
 
@@ -95,24 +110,35 @@ IMPORTANT:
       `
       INSERT INTO ai_insight
       (
+        insight_type,
         insight_title,
         insight_content,
+        total_inquiry,
         created_at
       )
       VALUES
       (
         $1,
         $2,
+        $3,
+        $4,
         CURRENT_TIMESTAMP
       )
       `,
-      [insightTitle, insightContent],
+      [
+        insightType,
+        insightTitle,
+        insightContent,
+        inquiryData.length,
+      ]
     );
 
     return NextResponse.json({
       success: true,
+      insight_type: insightType,
       insight_title: insightTitle,
       insight_content: insightContent,
+      total_inquiry: inquiryData.length,
     });
   } catch (error: any) {
     console.error(error);
@@ -124,7 +150,7 @@ IMPORTANT:
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }

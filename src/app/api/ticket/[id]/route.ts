@@ -160,7 +160,13 @@ export async function PUT(
     
     // 4. Eksekusi Update jika lolos validasi
     await db.query(
-      `UPDATE public.ticket SET status = $1, assigned_user_id = $2 WHERE ticket_id = $3`,
+      `UPDATE public.ticket 
+      SET 
+      status = $1, 
+      assigned_user_id = $2, 
+      updated_at = NOW()
+      WHERE ticket_id = $3
+      `,
       [finalStatus, finalAssignedId, ticketId]
     );
 
@@ -211,7 +217,9 @@ export async function PATCH(
     const result = await db.query(
       `
       UPDATE public.ticket
-      SET converted_to_erp = $1
+      SET 
+      converted_to_erp = $1,
+      updated_at = NOW()
       WHERE ticket_id = $2
       RETURNING *
       `,

@@ -153,7 +153,7 @@ export default function DashboardPage() {
                 {/* Inquiry */}
                 <div className="pr-6">
                   <div className="text-gray-900 font-bold truncate italic">
-                    "{ticket.product_inquiry}"
+                    "{ticket.reason_for_inquiry}"
                   </div>
 
                   <div className="text-[9px] font-black text-orange-400 uppercase tracking-widest mt-1">

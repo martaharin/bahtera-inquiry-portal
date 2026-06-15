@@ -39,6 +39,7 @@ export async function GET(req: Request) {
           t.ticket_id,
           t.status,
           t.assigned_user_id,
+          t.updated_at,
           t.created_at,
 
           i.inquiry_id,
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
     // ====================================================
 
     // SALES STAFF
-    if (roleName === 'Sales Staff' && userId) {
+    if (roleName === 'sales staff' && userId) {
 
       ticketQueryParams.push(userId);
 
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
 
     // HEAD SALES
     else if (
-      roleName === 'Head Sales' &&
+      roleName === 'head sales' &&
       industry &&
       branch
     ) {
@@ -100,7 +101,7 @@ export async function GET(req: Request) {
             FROM public.sales_person
             WHERE industry = $2
             AND branch = $3
-            AND role_name = 'Sales Staff'
+            AND role_name = 'sales staff'
           )
         )
       `);
@@ -177,7 +178,7 @@ export async function GET(req: Request) {
     // ====================================================
 
     ticketsQuery += `
-      ORDER BY t.created_at DESC;
+      ORDER BY COALESCE(t.updated_at, t.created_at) DESC NULLS LAST;
     `;
 
     // ====================================================
