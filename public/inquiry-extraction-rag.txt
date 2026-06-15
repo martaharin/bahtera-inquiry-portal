@@ -1,6 +1,8 @@
 Extract lead information from the conversation.
 
-Return only valid JSON.
+Return only a valid JSON object.
+Do not include Markdown code fences.
+Do not include explanations before or after the JSON.
 
 Schema:
 {
@@ -21,6 +23,9 @@ Rules:
 - Only extract information explicitly provided by the user.
 - Do not guess.
 - Keep null if unknown.
+- industry is to show which Bahtera's industry the inquiry should be delivered, the options are within 'Personal & Household Care', 'Food & Beverages', 'Agriculture & Animal Care', 'Industrial Solutions', 'Healthcare & Hygiene', 'Paper, Packaging & Export'
 - consent_to_contact is true only if user clearly agrees to be contacted.
 - summary the conversation and decide the intention for purchase or supply as the type
-- type cannot be empty
+- type cannot be empty, it must be between 'Supply' or 'Purchase'
+- industry_scale must be filled with the user's business' size, it should be following this rule 'Micro' for Home industries, solopreneurs, very small-scale operations, 'Small' for Small private companies, startups, local businesses, 'Medium' for SMEs with larger facilities, established regional businesses, 'Large' for Corporations, major enterprises,
+- if the user provide at least email or phone, mark it as true for consent_to_contact

@@ -86,7 +86,6 @@ export async function GET(request: NextRequest) {
       missingMandatoryFields.length === 0 &&
       missingAlternativeGroups.length === 0;
     const ticketStatus = isComplete ? 1 : 4;
-    console.log(inquiryData);
     const values = [
       sessionId,
       inquiryData.name ?? "",
