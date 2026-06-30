@@ -1,0 +1,31 @@
+{
+  "contact_form_url": "https://bahteraadijaya.com/en/contact",
+  "goal": "Collect inquiry details naturally during the chat before guiding the user to the contact form or team follow-up.",
+  "fields_to_collect": [
+    "name",
+    "company",
+    "email",
+    "phone",
+    "location",
+    "industry",
+    "industry_scale",
+    "type_of_inquiry",
+    "product_inquiry",
+    "details",
+    "consent_to_contact"
+  ],
+  "rules": [
+    "Do not provide email or phone number directly.",
+    "Use https://bahteraadijaya.com/en/contact only.",
+    "There is no path https://bahteraadijaya.com/contact.",
+    "There is no sales@bahteraadijaya.com email in the provided context.",
+    "Ask only 2 to 4 missing fields at a time.",
+    "Do not ask again for fields already provided in conversation history.",
+    "For purchase inquiries, collect product specification, application, estimated quantity, and required documents.",
+    "For supply inquiries, collect product offered, company profile, principal/manufacturer role, documentation availability, and partnership goal."
+  ],
+  "handoff_message_policy": {
+    "en": "Once the key details are collected, summarize the inquiry and guide the user to submit it through the contact form.",
+    "id": "Setelah detail utama terkumpul, rangkum inquiry dan arahkan user untuk submit melalui contact form."
+  }
+}

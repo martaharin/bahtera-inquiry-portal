@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Origin", value: "*" }, // Replace '*' with specific origin if needed
           {
             key: "Access-Control-Allow-Methods",
-            value: "GET, POST, PUT, DELETE",
+            value: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
           },
           {
             key: "Access-Control-Allow-Headers",

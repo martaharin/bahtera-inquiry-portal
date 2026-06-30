@@ -1,0 +1,165 @@
+{
+  "schema_name": "bahtera_inquiry_collection_schema",
+  "purpose": "Track what user information has been collected during the chat and guide the assistant to ask for missing fields naturally.",
+  "fields": [
+    {
+      "key": "name",
+      "label": "Name",
+      "required": true,
+      "examples": [
+        "Alexa",
+        "Budi Santoso"
+      ]
+    },
+    {
+      "key": "company",
+      "label": "Company",
+      "required": true,
+      "examples": [
+        "Shine Bright Company",
+        "PT Contoh Manufacturing"
+      ]
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "required": true,
+      "validation_hint": "Must look like an email address."
+    },
+    {
+      "key": "phone",
+      "label": "Phone",
+      "required": true,
+      "validation_hint": "Phone or WhatsApp number; keep as string."
+    },
+    {
+      "key": "location",
+      "label": "Location",
+      "required": true,
+      "examples": [
+        "Jakarta",
+        "Surabaya",
+        "Indonesia"
+      ]
+    },
+    {
+      "key": "industry",
+      "label": "Industry",
+      "required": true,
+      "allowed_values": [
+        "Personal & Household Care",
+        "Food & Beverages",
+        "Agriculture & Animal Care",
+        "Industrial Solutions",
+        "Healthcare & Hygiene",
+        "Paper, Packaging & Export"
+      ],
+      "note": "Must be one of these 6 exact values. Choose the closest match based on user's context."
+    },
+    {
+      "key": "industry_scale",
+      "label": "Industry scale",
+      "required": true,
+      "examples": [
+        "SME",
+        "manufacturer",
+        "monthly usage 1 ton",
+        "factory scale",
+        "distributor",
+        "farm scale"
+      ]
+    },
+    {
+      "key": "type_of_inquiry",
+      "label": "Type of inquiry",
+      "required": true,
+      "allowed_values": [
+        "buy_from_bahtera",
+        "supply_to_bahtera",
+        "product_information",
+        "technical_support",
+        "partnership",
+        "other"
+      ]
+    },
+    {
+      "key": "product_inquiry",
+      "label": "Product inquiry",
+      "required": true,
+      "examples": [
+        "Silicon Dioxide SiO2 90-130 microns",
+        "Texapon N 70",
+        "surfactant for shampoo",
+        "products offered by supplier"
+      ]
+    },
+    {
+      "key": "details",
+      "label": "Details",
+      "required": true,
+      "note": "Must always be filled with a summary of the chat session, describing what the user discussed, their needs, and their intent.",
+      "examples": [
+        "User inquired about surfactants for shampoo production, needs SDS and pricing for 500kg monthly",
+        "Supplier offering coating additives for industrial applications, seeking partnership with Bahtera",
+        "User asked about product categories and requested contact with sales team"
+      ]
+    },
+    {
+      "key": "consent_to_contact",
+      "label": "Consent to contact",
+      "required": false,
+      "allowed_values": [
+        true,
+        false,
+        null
+      ],
+      "note": "Ask for consent before saying the team can contact them directly."
+    }
+  ],
+  "collection_priority": {
+    "buy_from_bahtera": [
+      "product_inquiry",
+      "details",
+      "industry",
+      "company",
+      "name",
+      "email",
+      "phone",
+      "location",
+      "industry_scale",
+      "consent_to_contact"
+    ],
+    "supply_to_bahtera": [
+      "company",
+      "name",
+      "email",
+      "phone",
+      "location",
+      "product_inquiry",
+      "details",
+      "industry",
+      "industry_scale",
+      "consent_to_contact"
+    ],
+    "unknown": [
+      "type_of_inquiry",
+      "product_inquiry",
+      "company",
+      "name",
+      "email"
+    ]
+  },
+  "assistant_behavior": {
+    "ask_missing_fields_per_turn": {
+      "min": 2,
+      "max": 4
+    },
+    "do_not_repeat_known_fields": true,
+    "summarize_before_handoff": true,
+    "handoff_url": "https://bahteraadijaya.com/en/contact"
+  },
+  "summary_template": {
+    "en": "Here is the information I have so far: {summary}. To help our team follow up, could you also share {missing_fields}?",
+    "id": "Berikut informasi yang sudah saya terima: {summary}. Agar tim kami dapat menindaklanjuti, boleh dibantu lengkapi {missing_fields}?"
+  }
+}
