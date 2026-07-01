@@ -1,33 +1,53 @@
-import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth"
+import { NextResponse } from "next/server";;
+import { db } from "@/lib/db";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PermissionUser, canCreateTicket, isAdmin, isHeadSales, isSalesStaff, } from "@/lib/rbac";
 
 export async function GET(req: Request) {
-
   try {
 
+    // GET SESSION
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
+    const roleName = currentUser.role_name;
+    const cleanRole = roleName?.toLowerCase().trim();
+
+    const userId = currentUser.user_id;
+    const industry = currentUser.industry;
+    const branch = currentUser.branch;
+
+    // FILTER PARAMS
     const { searchParams } = new URL(req.url);
 
-    // =========================
-    // USER SESSION PARAMS
-    // =========================
-
-    const roleName = searchParams.get('role_name');
-    const userId = searchParams.get('user_id');
-    const industry = searchParams.get('industry');
-    const branch = searchParams.get('branch');
-
-    // =========================
-    // FILTER PARAMS
-    // =========================
-
-    const consent = searchParams.get('consent');
-    const status = searchParams.get('status');
-    const assignedTo = searchParams.get('assigned_to');
-    const startDate = searchParams.get('start_date');
-    const endDate = searchParams.get('end_date');
+    const consent = searchParams.get("consent");
+    const status = searchParams.get("status");
+    const assignedTo = searchParams.get("assigned_to");
+    const convertedToErp = searchParams.get("converted_to_erp");
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
 
     console.log(
-      `[TICKET API] CONNECTED TO DB - Role: ${roleName}, Industry: ${industry}, Branch: ${branch}`
+      `[TICKET API] User: ${userId}, Role: ${roleName}, Industry: ${industry}, Branch: ${branch}`
     );
 
     // ====================================================
@@ -39,19 +59,22 @@ export async function GET(req: Request) {
           t.ticket_id,
           t.status,
           t.assigned_user_id,
+          t.converted_to_erp,
           t.updated_at,
           t.created_at,
 
           i.inquiry_id,
           i.name,
           i.email,
+          i.phone,
           i.company,
           i.location,
           i.industry,
           i.product_inquiry,
           i.reason_for_inquiry,
           i.consent_to_contact,
-          u.user_name AS assigned_to 
+          i.type,
+          u.user_name AS assigned_to
 
       FROM public.inquiry i
 
@@ -62,16 +85,15 @@ export async function GET(req: Request) {
       ON t.assigned_user_id = u.user_id
     `;
 
-    let ticketQueryParams: any[] = [];
-    let conditions: string[] = [];
+    const ticketQueryParams: any[] = [];
+    const conditions: string[] = [];
 
     // ====================================================
     // ROLE FILTER
     // ====================================================
 
     // SALES STAFF
-    if (roleName === 'sales staff' && userId) {
-
+    if (isSalesStaff(currentUser) && userId) {
       ticketQueryParams.push(userId);
 
       conditions.push(`
@@ -80,12 +102,7 @@ export async function GET(req: Request) {
     }
 
     // HEAD SALES
-    else if (
-      roleName === 'head sales' &&
-      industry &&
-      branch
-    ) {
-
+    else if (isHeadSales(currentUser) && industry && branch) {
       ticketQueryParams.push(userId);
       ticketQueryParams.push(industry);
       ticketQueryParams.push(branch);
@@ -99,9 +116,9 @@ export async function GET(req: Request) {
           t.assigned_user_id IN (
             SELECT user_id
             FROM public.sales_person
-            WHERE industry = $2
-            AND branch = $3
-            AND role_name = 'sales staff'
+            WHERE LOWER(industry) = LOWER($2)
+            AND LOWER(branch) = LOWER($3)
+            AND LOWER(role_name) = 'sales staff'
           )
         )
       `);
@@ -111,9 +128,8 @@ export async function GET(req: Request) {
     // FILTER: CONSENT
     // ====================================================
 
-    if (consent !== null && consent !== '') {
-
-      ticketQueryParams.push(consent === 'true');
+    if (consent !== null && consent !== "") {
+      ticketQueryParams.push(consent === "true");
 
       conditions.push(`
         i.consent_to_contact = $${ticketQueryParams.length}
@@ -124,21 +140,31 @@ export async function GET(req: Request) {
     // FILTER: STATUS
     // ====================================================
 
-    if (status) {
-
-      ticketQueryParams.push(status);
+    if (convertedToErp !== null && convertedToErp !== "") {
+      ticketQueryParams.push(convertedToErp === "true");
 
       conditions.push(`
-        t.status = $${ticketQueryParams.length}
+        t.converted_to_erp = $${ticketQueryParams.length}
       `);
     }
 
-    // ====================================================
+    // FILTER: CONVERTED TO ERP
+    if (convertedToErp !== null && convertedToErp !== "") {
+      ticketQueryParams.push(convertedToErp === "true");
+
+      conditions.push(`
+        t.converted_to_erp = $${ticketQueryParams.length}
+      `);
+    }
+
     // FILTER: ASSIGNED TO
-    // ====================================================
+    // assigned_to=null berarti ticket belum di-assign
 
-    if (assignedTo) {
-
+    if (assignedTo === "null") {
+      conditions.push(`
+        t.assigned_user_id IS NULL
+      `);
+    } else if (assignedTo !== null && assignedTo !== "") {
       ticketQueryParams.push(assignedTo);
 
       conditions.push(`
@@ -151,7 +177,6 @@ export async function GET(req: Request) {
     // ====================================================
 
     if (startDate && endDate) {
-
       ticketQueryParams.push(startDate);
       ticketQueryParams.push(endDate);
 
@@ -160,6 +185,18 @@ export async function GET(req: Request) {
         BETWEEN $${ticketQueryParams.length - 1}
         AND $${ticketQueryParams.length}
       `);
+    } else if (startDate) {
+      ticketQueryParams.push(startDate);
+
+      conditions.push(`
+        DATE(t.created_at) >= $${ticketQueryParams.length}
+      `);
+    } else if (endDate) {
+      ticketQueryParams.push(endDate);
+
+      conditions.push(`
+        DATE(t.created_at) <= $${ticketQueryParams.length}
+      `);
     }
 
     // ====================================================
@@ -167,9 +204,8 @@ export async function GET(req: Request) {
     // ====================================================
 
     if (conditions.length > 0) {
-
       ticketsQuery += `
-        WHERE ${conditions.join(' AND ')}
+        WHERE ${conditions.join(" AND ")}
       `;
     }
 
@@ -182,35 +218,42 @@ export async function GET(req: Request) {
     `;
 
     // ====================================================
-    // EXECUTE QUERY
+    // EXECUTE TICKETS QUERY
     // ====================================================
 
-    const ticketsResult = await db.query(
-      ticketsQuery,
-      ticketQueryParams
-    );
+    const ticketsResult = await db.query(ticketsQuery, ticketQueryParams);
+
+    console.log("QUERY:");
+    console.log(ticketsQuery);
+
+    console.log("PARAMS:");
+    console.log(ticketQueryParams);
+
+    console.log("ROWS:");
+    console.log(ticketsResult.rows);
 
     // ====================================================
     // STATS QUERY
+    // Ini juga dipakai untuk list dropdown assigned sales
     // ====================================================
 
-    let statsQuery = '';
-    let statsQueryParams: any[] = [];
+    let statsQuery = "";
+    const statsQueryParams: any[] = [];
 
     // SALES STAFF
-    if (roleName === 'sales staff' && userId) {
-
+    if (isSalesStaff(currentUser) && userId) {
       statsQuery = `
         SELECT
           u.user_id,
           u.user_name,
-          COUNT(t.ticket_id)::int AS active_tickets_count
+          COUNT(DISTINCT CASE WHEN t.status IN (1, 2) THEN t.ticket_id END)::int AS assigned_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 1 THEN t.ticket_id END)::int AS new_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 2 THEN t.ticket_id END)::int AS in_progress_tickets_count
 
         FROM public."users" u
 
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
-        AND t.status IN (1, 2)
 
         WHERE u.user_id = $1
 
@@ -221,32 +264,26 @@ export async function GET(req: Request) {
     }
 
     // HEAD SALES
-    else if (
-      roleName === 'head sales' &&
-      industry &&
-      branch
-    ) {
-
+    else if (isHeadSales(currentUser) && industry && branch) {
       statsQuery = `
-      
         SELECT
           u.user_id,
           u.user_name,
-          COUNT(t.ticket_id)::int AS active_tickets_count
+          COUNT(DISTINCT CASE WHEN t.status IN (1, 2) THEN t.ticket_id END)::int AS assigned_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 1 THEN t.ticket_id END)::int AS new_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 2 THEN t.ticket_id END)::int AS in_progress_tickets_count
 
         FROM public."users" u
 
+        INNER JOIN public.sales_person sp
+        ON u.user_id = sp.user_id
+
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
-        AND t.status IN (1, 2)
 
-        WHERE u.user_id IN (
-          SELECT user_id
-          FROM public.sales_person
-          WHERE LOWER(industry) = LOWER($1)
-          AND LOWER(branch) = LOWER($2)
-          AND LOWER (role_name) = 'sales staff'
-        )
+        WHERE LOWER(sp.industry) = LOWER($1)
+        AND LOWER(sp.branch) = LOWER($2)
+        AND LOWER(sp.role_name) = 'sales staff'
 
         GROUP BY u.user_id, u.user_name
 
@@ -257,13 +294,14 @@ export async function GET(req: Request) {
     }
 
     // ADMIN
-    else {
-
+    else if (isAdmin(currentUser)) {
       statsQuery = `
         SELECT
           u.user_id,
           u.user_name,
-          COUNT(t.ticket_id)::int AS active_tickets_count
+          COUNT(DISTINCT CASE WHEN t.status IN (1, 2) THEN t.ticket_id END)::int AS assigned_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 1 THEN t.ticket_id END)::int AS new_tickets_count,
+          COUNT(DISTINCT CASE WHEN t.status = 2 THEN t.ticket_id END)::int AS in_progress_tickets_count
 
         FROM public."users" u
 
@@ -272,7 +310,6 @@ export async function GET(req: Request) {
 
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
-        AND t.status IN (1, 2)
 
         WHERE LOWER(sp.role_name) = 'sales staff'
 
@@ -286,15 +323,19 @@ export async function GET(req: Request) {
     // EXECUTE STATS
     // ====================================================
 
-    const statsResult = await db.query(
-      statsQuery,
-      statsQueryParams
-    );
+    const statsResult = await db.query(statsQuery, statsQueryParams);
+
+    const salesUsers = statsResult.rows.map((user) => ({
+      user_id: user.user_id,
+      user_name: user.user_name,
+    }));
 
     console.log("ROLE:", roleName);
+    console.log("CLEAN ROLE:", cleanRole);
     console.log("INDUSTRY:", industry);
     console.log("BRANCH:", branch);
     console.log("STATS:", statsResult.rows);
+    console.log("SALES USERS:", salesUsers);
 
     // ====================================================
     // RESPONSE
@@ -303,36 +344,62 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       tickets: ticketsResult.rows,
-      stats: statsResult.rows
+      stats: statsResult.rows,
+      salesUsers,
     });
-
   } catch (error: any) {
-
-    console.error(
-      "Database Error (GET Tickets Final):",
-      error
-    );
+    console.error("Database Error (GET Tickets Final):", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message
+        error: error.message,
       },
       {
-        status: 500
+        status: 500,
       }
     );
   }
 }
 
-//create ticket//
 export async function POST(req: Request) {
+  let transactionStarted = false;
 
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
+    if (!canCreateTicket(currentUser)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const body = await req.json();
-
-    console.log("BODY:", body);
 
     const {
       company,
@@ -342,13 +409,38 @@ export async function POST(req: Request) {
       location,
       industry,
       industryScale,
+      type,
       productInquiry,
       reason,
-      consent
+      consent,
     } = body;
 
-    //insert inquiry//
+    if (!company || !name || !email || !type) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Company, requester name, email, and type are required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
+    if (!["Purchase", "Supply"].includes(type)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid ticket type",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    await db.query("BEGIN");
+    transactionStarted = true;
 
     const inquiryResult = await db.query(
       `
@@ -363,70 +455,78 @@ export async function POST(req: Request) {
         industry_scale,
         product_inquiry,
         reason_for_inquiry,
-        consent_to_contact
+        consent_to_contact,
+        type
       )
       VALUES
-      (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-      )
-      RETURNING inquiry_id;
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING inquiry_id
       `,
       [
         company,
         name,
         email,
-        phone,
-        location,
-        industry,
-        industryScale,
-        productInquiry,
-        reason,
-        consent
+        phone || null,
+        location || null,
+        industry || null,
+        industryScale || null,
+        productInquiry || null,
+        reason || null,
+        Boolean(consent),
+        type,
       ]
     );
 
-    // GET INQUIRY ID
-    const inquiryId =
-      inquiryResult.rows[0].inquiry_id;
+    const inquiryId = inquiryResult.rows[0].inquiry_id;
 
-    // INSERT TICKET
+    const assignedUserId = isSalesStaff(currentUser)
+      ? currentUser.user_id
+      : null;
+
     await db.query(
       `
       INSERT INTO public.ticket
       (
         inquiry_id,
         status,
-        created_at
+        assigned_user_id,
+        converted_to_erp
       )
       VALUES
-      (
-        $1,
-        1,
-        NOW()
-      );
+      ($1, $2, $3, $4)
+      ON CONFLICT ON CONSTRAINT ticket_inquiry_id_unique
+      DO NOTHING
       `,
-      [inquiryId]
+      [
+        inquiryId,
+        1,
+        assignedUserId,
+        false,
+      ]
     );
+
+    await db.query("COMMIT");
+    transactionStarted = false;
 
     return NextResponse.json({
       success: true,
-      inquiry_id: inquiryId
+      message: "Ticket created successfully",
+      inquiry_id: inquiryId,
     });
-
   } catch (error: any) {
+    if (transactionStarted) {
+      await db.query("ROLLBACK");
+    }
 
-    console.error(
-      "Database Error (CREATE Ticket):",
-      error
-    );
+    console.error("Database Error (POST Ticket):", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message
+        error: error.message,
       },
       {
-        status: 500
+        status: 500,
       }
     );
   }

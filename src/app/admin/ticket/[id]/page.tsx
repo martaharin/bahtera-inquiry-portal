@@ -3,6 +3,7 @@
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface TicketData {
   ticket_id: string;
@@ -15,6 +16,7 @@ interface TicketData {
   industry: string;
   reason_for_inquiry: string;
   product_inquiry: string;
+  type: string | null;
   created_at: string;
   assigned_user_id: string | null;
   assigned_to: string | null;
@@ -24,6 +26,9 @@ interface TicketData {
 interface UserList {
   user_id: string;
   user_name: string;
+  role_name: string | null;
+  branch: string | null;
+  industry: string | null;
 }
 
 interface ChatMessage {
@@ -50,12 +55,42 @@ const STATUS_MAPPING: Record<number, { label: string; color: string }> = {
   },
 };
 
+const formatDateTime = (dateValue: string) => {
+  if (!dateValue) return "-";
+
+  return new Date(dateValue).toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const getWhatsAppLink = (phoneValue: string) => {
+  if (!phoneValue) return "";
+
+  let phone = phoneValue.replace(/\D/g, "");
+
+  if (phone.startsWith("0")) {
+    phone = `62${phone.slice(1)}`;
+  }
+
+  if (!phone.startsWith("62")) {
+    phone = `62${phone}`;
+  }
+
+  return `https://wa.me/${phone}`;
+};
+
 export default function DetailTicketPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const unpackedParams = use(params);
   const ticketId = unpackedParams.id;
 
@@ -64,12 +99,16 @@ export default function DetailTicketPage({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState("");
+  const currentUserId = (session?.user as any)?.user_id ?? null;
+  const currentUserRole = (session?.user as any)?.role_name ?? "";
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [assignBranch, setAssignBranch] = useState("");
+  const [assignIndustry, setAssignIndustry] = useState("");
 
   const [editForm, setEditForm] = useState({
     status: 1,
@@ -91,14 +130,10 @@ export default function DetailTicketPage({
         setError("");
 
         // Ambil data secara paralel untuk performa loading yang lebih cepat
-        const [resTicket, resUsers, sessionRes] = await Promise.all([
+        const [resTicket, resUsers] = await Promise.all([
           fetch(`/api/ticket/${ticketId}`),
           fetch("/api/users").catch((e) => {
             console.error("Gagal memuat API users:", e);
-            return null;
-          }),
-          fetch("/api/auth/me").catch((e) => {
-            console.error("Gagal ambil session user:", e);
             return null;
           }),
         ]);
@@ -111,13 +146,6 @@ export default function DetailTicketPage({
           if (Array.isArray(resultUsers)) {
             setUsers(resultUsers);
           }
-        }
-
-        // Proses data sesi aktif
-        if (sessionRes?.ok) {
-          const sessionData = await sessionRes.json();
-          setCurrentUserId(sessionData.user?.user_id || null);
-          setCurrentUserRole(sessionData.user?.role_name || "");
         }
 
         // Proses data detail tiket
@@ -184,6 +212,8 @@ export default function DetailTicketPage({
         industry: ticket.industry || "",
       });
     }
+    setAssignBranch("");
+    setAssignIndustry("");
     setIsEditing(false);
   };
 
@@ -330,6 +360,70 @@ export default function DetailTicketPage({
 
   const canConvertERP = isAssignedSales;
 
+  const normalizeText = (value?: string | null) => {
+    return (value || "").toLowerCase().trim();
+  };
+
+  const ticketType = normalizeText(ticket.type);
+
+  const isPurchaseTicket = ticketType === "purchase";
+  const isSupplyTicket = ticketType === "supply";
+
+  const branchOptions = Array.from(
+    new Set(
+      users
+        .map((user) => user.branch)
+        .filter((branch): branch is string => Boolean(branch))
+    )
+  ).sort();
+
+  const industryOptions = Array.from(
+    new Set(
+      users
+        .map((user) => user.industry)
+        .filter((industry): industry is string => Boolean(industry))
+    )
+  ).sort();
+
+  const assignedUserOptions = users.filter((user) => {
+    const userRole = normalizeText(user.role_name);
+
+    if (isSupplyTicket) {
+      return userRole === "product team";
+    }
+
+    if (isPurchaseTicket) {
+      return (
+        (userRole === "sales staff" || userRole === "sales") &&
+        normalizeText(user.branch) === normalizeText(assignBranch) &&
+        normalizeText(user.industry) === normalizeText(assignIndustry)
+      );
+    }
+
+    return false;
+  });
+  console.log({
+    currentUserRole,
+    currentUserId,
+    cleanRole,
+    isAdmin,
+    isHeadSales,
+    isSales,
+    isAssignedSales,
+    canEditTicket,
+    ticketAssignedUser: ticket.assigned_user_id,
+  });
+
+  const handleStartEdit = () => {
+    const selectedUser = users.find(
+      (user) => String(user.user_id) === String(ticket.assigned_user_id)
+    );
+
+    setAssignBranch(selectedUser?.branch || "");
+    setAssignIndustry(selectedUser?.industry || "");
+    setIsEditing(true);
+  };
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       {/* BACK BUTTON */}
@@ -363,31 +457,96 @@ export default function DetailTicketPage({
               ID TIKET: {ticket.ticket_id}
             </span>
 
-            <h1 className="text-2xl font-black text-gray-900">
-              Inquiry: {ticket.reason_for_inquiry}
+            <h1 className="text-xl text-gray-900 leading-snug">
+              <span className="font-semibold">Inquiry:</span>{" "}
+              <span className="font-normal">
+                {ticket.reason_for_inquiry || "-"}
+              </span>
             </h1>
 
-            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 h-8">Product: {ticket.product_inquiry} </span>
+            <div className="space-y-1">
+              <span className="font-bold">Product:</span>
+              <span className="font-medium normal-case">
+                {ticket.product_inquiry || "-"}
+              </span>
+
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 h-8">
+                Type: {ticket.type || "-"}
+              </span>
+            </div>
 
             {/* ASSIGNED TO */}
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 h-8">
-              <span>Assigned to:</span>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-start gap-2">
+              <span className="h-8 flex items-center">Assigned to:</span>
+
               {isEditing ? (
-                <select
-                  name="assigned_user_id"
-                  value={editForm.assigned_user_id}
-                  onChange={handleInputChange}
-                  className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200 normal-case"
-                >
-                  <option value="">Belum ditugaskan (-)</option>
-                  {users.map((u) => (
-                    <option key={u.user_id} value={u.user_id}>
-                      {u.user_name}
+                <div className="flex flex-wrap items-center gap-2 normal-case">
+                  {isPurchaseTicket && (
+                    <>
+                      <select
+                        value={assignBranch}
+                        onChange={(e) => {
+                          setAssignBranch(e.target.value);
+                          setEditForm((prev) => ({
+                            ...prev,
+                            assigned_user_id: "",
+                          }));
+                        }}
+                        className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200"
+                      >
+                        <option value="">Select branch</option>
+                        {branchOptions.map((branch) => (
+                          <option key={branch} value={branch}>
+                            {branch}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={assignIndustry}
+                        onChange={(e) => {
+                          setAssignIndustry(e.target.value);
+                          setEditForm((prev) => ({
+                            ...prev,
+                            assigned_user_id: "",
+                          }));
+                        }}
+                        className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200"
+                      >
+                        <option value="">Select industry</option>
+                        {industryOptions.map((industry) => (
+                          <option key={industry} value={industry}>
+                            {industry}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+
+                  <select
+                    name="assigned_user_id"
+                    value={editForm.assigned_user_id}
+                    onChange={handleInputChange}
+                    disabled={
+                      isPurchaseTicket && (!assignBranch || !assignIndustry)
+                    }
+                    className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {isPurchaseTicket && (!assignBranch || !assignIndustry)
+                        ? "Select branch and industry first"
+                        : "Unassigned (-)"}
                     </option>
-                  ))}
-                </select>
+
+                    {assignedUserOptions.map((user) => (
+                      <option key={user.user_id} value={user.user_id}>
+                        {user.user_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ) : (
-                <span className="text-orange-500 font-extrabold normal-case">
+                <span className="h-8 flex items-center text-orange-500 font-extrabold normal-case">
                   {ticket.assigned_to || "-"}
                 </span>
               )}
@@ -462,7 +621,7 @@ export default function DetailTicketPage({
               ) : (
                 <>
                   <button
-                    onClick={() => setIsEditing(true)}
+                    onClick={handleStartEdit}
                     disabled={!canEditTicket} 
                     className={`px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all ${
                       canEditTicket
@@ -515,25 +674,37 @@ export default function DetailTicketPage({
                 )}
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 <span className="text-gray-400 inline-block w-20">Email:</span>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={editForm.email}
-                    onChange={handleInputChange}
-                    className="flex-1 p-1.5 bg-gray-50 border rounded-lg text-sm font-bold outline-none border-gray-200 focus:ring-2 focus:ring-orange-200"
-                  />
-                ) : (
-                  <span className="text-gray-900 font-bold">
-                    {ticket.email}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(ticket.email);
+                      setCopiedEmail(true);
+
+                      setTimeout(() => {
+                        setCopiedEmail(false);
+                      }, 1500);
+                    } catch (error) {
+                      console.error("Copy email error:", error);
+                    }
+                  }}
+                  className="text-left text-gray-900 font-bold hover:text-orange-500 hover:underline transition"
+                >
+                  {ticket.email}
+                </button>
+
+                {copiedEmail && (
+                  <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+                    Copied
                   </span>
                 )}
               </div>
 
               <div className="flex items-center">
                 <span className="text-gray-400 inline-block w-20">Phone:</span>
+
                 {isEditing ? (
                   <input
                     type="text"
@@ -542,10 +713,17 @@ export default function DetailTicketPage({
                     onChange={handleInputChange}
                     className="flex-1 p-1.5 bg-gray-50 border rounded-lg text-sm font-bold outline-none border-gray-200 focus:ring-2 focus:ring-orange-200"
                   />
-                ) : (
-                  <span className="text-gray-900 font-bold">
+                ) : ticket.phone ? (
+                  <a
+                    href={getWhatsAppLink(ticket.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-900 font-bold hover:text-green-600 hover:underline transition"
+                  >
                     {ticket.phone}
-                  </span>
+                  </a>
+                ) : (
+                  <span className="text-gray-900 font-bold">-</span>
                 )}
               </div>
 
@@ -620,7 +798,7 @@ export default function DetailTicketPage({
                   Created at:
                 </span>
                 <span className="text-gray-900 font-bold">
-                  {new Date(ticket.created_at).toLocaleDateString("id-ID")}
+                  {formatDateTime(ticket.created_at)}
                 </span>
               </div>
             </div>

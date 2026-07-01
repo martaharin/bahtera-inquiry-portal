@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("bagas@company.com");
@@ -13,38 +13,31 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage("");
+  e.preventDefault();
+  setIsLoading(true);
+  setErrorMessage("");
 
-    console.log("=== TRYING TO LOGIN ===");
-    console.log("EMAIL:", email);
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-    try {
-      // Menembak endpoint API login baru yang sudah kita LEFT JOIN ke sales_person
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      console.log("API AUTH RESPONSE:", data);
-
-      if (response.ok && data.success) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        
-        router.push("/admin/dashboard");
-      } else {
-        setErrorMessage(data.error || "Login gagal, cek kembali email/password kamu.");
-      }
-    } catch (error) {
-      console.error("Login Client Error:", error);
-      setErrorMessage("Koneksi ke server auth bermasalah.");
-    } finally {
-      setIsLoading(false);
+    if (!result || result.error) {
+      setErrorMessage("Email atau Password salah");
+      return;
     }
-  };
+
+    router.replace("/admin/ticket");
+    router.refresh();
+  } catch (error) {
+    console.error("Login Client Error:", error);
+    setErrorMessage("Koneksi ke server auth bermasalah.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb] p-6">
