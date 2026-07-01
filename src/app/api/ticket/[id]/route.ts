@@ -1,41 +1,41 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PermissionUser, canEditTicket, canDeleteTicket, canConvertERP,canViewTicket} from "@/lib/rbac";
 
-// Helper function untuk mengambil session user secara dinamis tanpa hardcode 'localhost:3000'
-async function getAuthenticatedUser(req: Request) {
-  try {
-    const origin = new URL(req.url).origin;
-    const sessionRes = await fetch(`${origin}/api/auth/me`, {
-      headers: req.headers,
-    });
-
-    if (!sessionRes.ok) return null;
-    
-    const session = await sessionRes.json();
-    return session?.success ? session.user : null;
-  } catch (error) {
-    console.error("Gagal mengambil session user di API:", error);
-    return null;
-  }
-}
-
-// ==========================================
-// 1. GET: Mengambil Detail Tiket & Chat Messages History
-// ==========================================
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> } 
 ) {
   try {
-    const { id } = await params; 
-    const inquiryId = id;
+    const session = await getServerSession(authOptions);
 
-    if (!inquiryId) {
+    if (!session) {
       return NextResponse.json(
-        { success: false, error: "Ticket ID tidak ditemukan di params" },
-        { status: 400 }
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
+    const { id } = await params;
+      if (!id) {
+
+        return NextResponse.json(
+
+          { success: false, error: "Ticket ID is missing from the request parameters" },
+
+          { status: 400 }
+
+        );
+      }
 
     const result = await db.query(
       `
@@ -51,27 +51,50 @@ export async function GET(
         i.product_inquiry,
         i.consent_to_contact,
         i.session_id,
+        i.type AS type,
         t.ticket_id,
         t.status,
         t.assigned_user_id,
         t.created_at,
         t.converted_to_erp,
-        u.user_name AS assigned_to
+        u.user_name AS assigned_to,
+        sp.industry AS assigned_industry,
+        sp.branch AS assigned_branch
       FROM public.inquiry i
       LEFT JOIN public.ticket t ON i.inquiry_id = t.inquiry_id
       LEFT JOIN public."users" u ON t.assigned_user_id = u.user_id
+      LEFT JOIN public.sales_person sp ON t.assigned_user_id = sp.user_id
       WHERE i.inquiry_id = $1 OR t.ticket_id = $1
       LIMIT 1
       `,
-      [inquiryId]
+      [id]
     );
 
-    const row = result?.rows?.[0];
+    const row = result.rows[0];
 
     if (!row) {
       return NextResponse.json(
         { success: false, error: "Ticket tidak ditemukan" },
         { status: 404 }
+      );
+    }
+
+    if (
+      !canViewTicket(
+        currentUser,
+        row.assigned_user_id,
+        row.assigned_industry,
+        row.assigned_branch
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
       );
     }
 
@@ -104,61 +127,92 @@ export async function GET(
   }
 }
 
-// ==========================================
-// 2. PUT: Mengupdate Data Tiket & Inquiry (PROTECTED)
-// ==========================================
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
     const { id } = await params;
     const ticketId = id;
     
-    // 1. Ambil session user aktif
-    const currentUser = await getAuthenticatedUser(req);
-    if (!currentUser) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const role = (currentUser.role_name || "").trim().toLowerCase();
-    const currentUserId = String(currentUser.user_id).trim();
-    
-    // 2. Ambil data tiket saat ini untuk dicek kepemilikannya
     const ticketCheck = await db.query(
-      `SELECT inquiry_id, status, assigned_user_id FROM public.ticket WHERE ticket_id = $1 LIMIT 1`,
+      `
+      SELECT
+        inquiry_id,
+        status,
+        assigned_user_id
+      FROM public.ticket
+      WHERE ticket_id = $1
+      LIMIT 1
+      `,
       [ticketId]
     );
 
-    const existingTicket = ticketCheck?.rows?.[0];
+    const existingTicket = ticketCheck.rows[0];
     if (!existingTicket) {
-      return NextResponse.json({ success: false, error: "Ticket tidak ditemukan" }, { status: 404 });
-    }
-
-    // 3. Validasi Otorisasi PUT: Menjaring role "sales staff" dari databasemu
-    const isAdmin = role === "admin";
-    const isSales = role === "sales staff" || role === "sales"; 
-    const isAssignedSales = existingTicket.assigned_user_id && String(existingTicket.assigned_user_id).trim() === currentUserId;
-
-    // 💡 FIXED LOGIC GATE: Pastikan harus Admin ATAU (Sales Staff DAN di-assigned)
-    if (!isAdmin && !(isSales && isAssignedSales)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Hanya Admin atau Sales yang ditugaskan yang dapat mengedit tiket ini" },
-        { status: 403 }
+        {
+          success: false,
+          error: "Ticket not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+    if (
+      !canEditTicket(
+        currentUser,
+        existingTicket.assigned_user_id
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
       );
     }
 
     const body = await req.json();
-    const { status, assigned_user_id, name, email, phone, location, company, industry } = body;
+    const {
+      status,
+      assigned_user_id,
+      name,
+      email,
+      phone,
+      location,
+      company,
+      industry,
+    } = body;
 
     // FIXED ERROR INTEGER: Validasi input data status agar tidak mengirim string kosong "" ke PostgreSQL
     const finalStatus = (status !== undefined && status !== "" && !isNaN(Number(status))) 
       ? Number(status) 
       : existingTicket.status;
 
-    const finalAssignedId = (assigned_user_id === "" || assigned_user_id === undefined) ? null : assigned_user_id;
+    const finalAssignedId =
+      assigned_user_id?.trim() || null;
     
-    // 4. Eksekusi Update jika lolos validasi
     await db.query(
       `UPDATE public.ticket 
       SET 
@@ -189,28 +243,88 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: "Data tiket dan inquiry berhasil diperbarui",
+      message: "Ticket updated successfully",
     });
 
   } catch (error: any) {
     console.error("PUT TICKET ERROR:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Gagal memperbarui data" },
+      { success: false, error: error?.message || "Failed to update ticket" },
       { status: 500 }
     );
   }
 }
 
-// ==========================================
-// 3. PATCH: Update Status Konversi ERP
-// ==========================================
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
     const { id } = await params;
     const ticketId = id;
+
+    const ticketCheck = await db.query(
+      `
+      SELECT assigned_user_id
+      FROM public.ticket
+      WHERE ticket_id = $1
+      LIMIT 1
+      `,
+      [ticketId]
+    );
+
+    const existingTicket = ticketCheck.rows[0];
+
+    if (!existingTicket) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Ticket not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    if (
+      !canConvertERP(
+        currentUser,
+        existingTicket.assigned_user_id
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     const body = await req.json();
     const { converted_to_erp } = body;
 
@@ -226,24 +340,19 @@ export async function PATCH(
       [converted_to_erp, ticketId]
     );
 
-    if (result.rows.length === 0) {
-      return NextResponse.json({ success: false, error: "Ticket tidak ditemukan" }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, data: result.rows[0] });
+    return NextResponse.json({ 
+      success: true, data: result.rows[0] 
+    });
 
   } catch (error: any) {
     console.error("PATCH ERP ERROR:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Gagal update ERP conversion" },
+      { success: false, error: error?.message || "Failed to update ERP conversion" },
       { status: 500 }
     );
   }
 }
 
-// ==========================================
-// 4. DELETE: Menghapus Tiket & Inquiry (PROTECTED)
-// ==========================================
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -252,19 +361,30 @@ export async function DELETE(
     const { id } = await params;
     const ticketId = id;
 
-    // 1. Ambil session user aktif
-    const currentUser = await getAuthenticatedUser(req);
-    if (!currentUser) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const role = (currentUser.role_name || "").trim().toLowerCase();
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
 
-    // 2. Validasi Otorisasi DELETE: Mutlak hanya Admin
-    if (role !== "admin") {
+    if (!canDeleteTicket(currentUser)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Hanya Admin yang dapat menghapus tiket" },
-        { status: 403 }
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
       );
     }
 
@@ -278,19 +398,18 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Ticket tidak ditemukan" }, { status: 404 });
     }
 
-    // 3. Eksekusi Hapus data
     await db.query(`DELETE FROM public.ticket WHERE ticket_id = $1`, [ticketId]);
     await db.query(`DELETE FROM public.inquiry WHERE inquiry_id = $1`, [existingTicket.inquiry_id]);
 
     return NextResponse.json({
       success: true,
-      message: "Tiket beserta data inquiry berhasil dihapus",
+      message: "Ticket deleted successfully.",
     });
 
   } catch (error: any) {
     console.error("DELETE TICKET ERROR:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Gagal menghapus data" },
+      { success: false, error: error?.message || "Failed to delete data" },
       { status: 500 }
     );
   }

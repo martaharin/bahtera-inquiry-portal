@@ -1,14 +1,10 @@
 // proxy.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "@/lib/session";
-
-const app_url = process.env.NEXT_PUBLIC_APP_URL;
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // skip next assets & static files
+  // 1. Skip next assets & static files
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -17,36 +13,27 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = request.cookies.get("session")?.value;
+  // 2. Ambil cookie NextAuth (sesuaikan nama token untuk dev vs prod)
+  const isProd = process.env.NODE_ENV === "production";
+  const nextAuthTokenName = isProd 
+    ? "__Secure-next-auth.session-token" 
+    : "next-auth.session-token";
 
-  // console.log("EMAIL:", email);
+  const hasSession = request.cookies.has(nextAuthTokenName);
 
-  // ===== USER HAS COOKIE =====
-  if (session) {
-    // prevent access login page after login
+  // ===== USER HAS SESSION =====
+  if (hasSession) {
+    // Jika sudah login, cegah masuk ke halaman login kembali
     if (pathname === "/auth/login") {
       return NextResponse.redirect(
         new URL("/admin/dashboard", request.url)
       );
     }
-
-    try {
-      const payload = await decrypt(session);
-
-      if (payload) {
-        return NextResponse.next();
-      }
-    } catch (error) {
-      console.error("Session Invalid:", error);
-    }
-
-    // invalid cookie/session
-    return NextResponse.redirect(
-      new URL("/auth/login", request.url)
-    );
+    return NextResponse.next();
   }
 
   // ===== NOT LOGGED IN =====
+  // Jika belum login dan mencoba akses dashboard
   if (pathname.startsWith("/admin")) {
     return NextResponse.redirect(
       new URL("/auth/login", request.url)

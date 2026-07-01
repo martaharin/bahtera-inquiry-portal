@@ -1,38 +1,47 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PermissionUser } from "@/lib/rbac";
 
 // ==========================================
 // GET PROFILE
 // ==========================================
 export async function GET() {
   try {
-    const cookieStore = await cookies();
+    const session = await getServerSession(authOptions);
+    console.log("SESSION:", session);
 
-    const userId = cookieStore.get("user_id")?.value;
-
-    if (!userId) {
+    if (!session) {
       return NextResponse.json(
         {
           success: false,
           error: "Unauthorized",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
 
     const result = await db.query(
       `
       SELECT 
         user_id,
         user_name,
-        user_email,
-        password
+        user_email
       FROM public.users
       WHERE user_id = $1
       LIMIT 1
       `,
-      [userId]
+      [currentUser.user_id]
     );
 
     const user = result.rows[0];
@@ -41,7 +50,7 @@ export async function GET() {
       return NextResponse.json(
         {
           success: false,
-          error: "User tidak ditemukan",
+          error: "User not found",
         },
         { status: 404 }
       );
@@ -69,43 +78,124 @@ export async function GET() {
 // ==========================================
 export async function PUT(req: Request) {
   try {
-    const cookieStore = await cookies();
-
-    const userId = cookieStore.get("user_id")?.value;
-
-    if (!userId) {
+    const session = await getServerSession(authOptions);
+    console.log("SESSION:", session);
+    
+    if (!session) {
       return NextResponse.json(
         {
           success: false,
           error: "Unauthorized",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
+
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
 
     const body = await req.json();
 
     const {
       username,
       email,
-      password,
     } = body;
 
-    await db.query(
+    if (!username?.trim() || !email?.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Username and email are required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    const usernameCheck = await db.query(
+      `
+      SELECT 1
+      FROM public.users
+      WHERE user_name = $1
+      AND user_id <> $2
+      `,
+      [cleanUsername, currentUser.user_id]
+    );
+
+    if (usernameCheck.rowCount && usernameCheck.rowCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Username already exists",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const emailCheck = await db.query(
+      `
+      SELECT 1
+      FROM public.users
+      WHERE user_email = $1
+      AND user_id <> $2
+      `,
+      [cleanEmail, currentUser.user_id]
+    );
+
+    if (emailCheck.rowCount && emailCheck.rowCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Email already exists",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const updateResult = await db.query(
       `
       UPDATE public.users
       SET
         user_name = $1,
-        user_email = $2,
-        password = $3
-      WHERE user_id = $4
+        user_email = $2
+      WHERE user_id = $3
       `,
-      [username, email, password, userId]
+      [
+        cleanUsername,
+        cleanEmail,
+        currentUser.user_id,
+      ]
     );
+
+    if (updateResult.rowCount === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "User not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Profile berhasil diupdate",
+      message: "Profile updated successfully",
     });
   } catch (error: any) {
     console.error("UPDATE PROFILE ERROR:", error);
@@ -113,7 +203,7 @@ export async function PUT(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: "Internal server error",
       },
       { status: 500 }
     );
