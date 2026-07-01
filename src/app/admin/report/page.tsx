@@ -1,57 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function ReportPage() {
-  const [mounted, setMounted] = useState(false);
+  const { data: session, status } = useSession();
 
-  const [currentUser, setCurrentUser] = useState({
-    role_name: "",
-    user_id: "",
-    industry: "",
-    branch: "",
-  });
+  if (status === "loading") {
+    return null;
+  }
 
-  useEffect(() => {
-    setMounted(true);
+  const currentUser = session?.user as any;
 
-    const savedUser = localStorage.getItem("user");
+  if (!currentUser) {
+    return null;
+  }
 
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
+  const role = currentUser.role_name?.toLowerCase().trim();
 
-      setCurrentUser({
-        role_name: user.role_name || "",
-        user_id: user.user_id || "",
-        industry: user.industry || "",
-        branch: user.branch || "",
-      });
-    }
-  }, []);
-
-  if (!mounted) return null;
-
-  const role = currentUser.role_name.toLowerCase().trim();
-
-  // ==========================
-  // ROLE CHECK
-  // ==========================
   const isSales =
     role === "sales" ||
     role === "sales staff";
 
   // ==========================
-  // LOOKER DASHBOARD
+  // EXECUTIVE DASHBOARD
   // ==========================
   const executiveDashboard =
     "https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60/page/QpoqF";
 
+  // ==========================
+  // SALES FILTER PARAM
+  // ==========================
+  const filterParams = encodeURIComponent(
+    JSON.stringify({
+      df29: `include0IN${currentUser.user_name}`,
+    })
+  );
+
+  // ==========================
+  // SALES DASHBOARD
+  // ==========================
   const salesDashboard =
-    "https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60/page/p_p0wrwuso3d";
+    `https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60/page/p_p0wrwuso3d?params=${filterParams}`;
 
   const dashboardUrl = isSales
     ? salesDashboard
     : executiveDashboard;
+
+  console.log("========= REPORT DEBUG =========");
+  console.log("Role :", currentUser.role_name);
+  console.log("Sales :", currentUser.user_name);
+  console.log("Dashboard :", dashboardUrl);
+  console.log("===============================");
 
   return (
     <div
@@ -79,7 +78,10 @@ export default function ReportPage() {
             marginTop: "8px",
           }}
         >
-          Logged in as <b>{currentUser.role_name}</b>
+          Logged in as{" "}
+          <b>
+            {currentUser.user_name} ({currentUser.role_name})
+          </b>
         </p>
       </div>
 
