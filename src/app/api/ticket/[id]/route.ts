@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PermissionUser, canEditTicket, canDeleteTicket, canConvertERP,canViewTicket} from "@/lib/rbac";
-
+import { updateAnalyticsFromTicket } from "@/lib/analytics/updateAnalyticsFromTicket";
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> } 
@@ -224,6 +224,8 @@ export async function PUT(
       [finalStatus, finalAssignedId, ticketId]
     );
 
+    await updateAnalyticsFromTicket(ticketId);
+
     await db.query(
       `
       UPDATE public.inquiry 
@@ -339,6 +341,7 @@ export async function PATCH(
       `,
       [converted_to_erp, ticketId]
     );
+      await updateAnalyticsFromTicket(ticketId);
 
     return NextResponse.json({ 
       success: true, data: result.rows[0] 

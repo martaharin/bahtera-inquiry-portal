@@ -4,6 +4,8 @@ import Cerebras from "@cerebras/cerebras_cloud_sdk";
 import fs from "fs/promises";
 import path from "path";
 import { qualifySession } from "@/lib/session-qualification";
+import { syncAnalytics } from "@/lib/analytics/syncAnalytics";
+import { generateInsight } from "@/lib/analytics/generateInsight";
 
 const client = new Cerebras({
   apiKey: process.env["CEREBRAS_API_KEY"],
@@ -181,11 +183,15 @@ async function processLeadExtraction(sessionId: string) {
     `,
     [inquiryId.inquiry_id, ticketStatus],
   );
+  await syncAnalytics(inquiryId.inquiry_id);
+
+  await generateInsight();
+
 
   await db.query(
     `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
     [sessionId],
-  );
+);
 
   return {
     success: true,
