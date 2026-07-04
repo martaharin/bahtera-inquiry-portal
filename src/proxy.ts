@@ -15,8 +15,8 @@ export default async function proxy(request: NextRequest) {
 
   // 2. Ambil cookie NextAuth (sesuaikan nama token untuk dev vs prod)
   const isProd = process.env.NODE_ENV === "production";
-  const nextAuthTokenName = isProd 
-    ? "__Secure-next-auth.session-token" 
+  const nextAuthTokenName = isProd
+    ? "__Secure-next-auth.session-token"
     : "next-auth.session-token";
 
   const hasSession = request.cookies.has(nextAuthTokenName);
@@ -25,9 +25,7 @@ export default async function proxy(request: NextRequest) {
   if (hasSession) {
     // Jika sudah login, cegah masuk ke halaman login kembali
     if (pathname === "/auth/login") {
-      return NextResponse.redirect(
-        new URL("/admin/dashboard", request.url)
-      );
+      return NextResponse.redirect(new URL("/admin/ticket", request.url));
     }
     return NextResponse.next();
   }
@@ -35,9 +33,7 @@ export default async function proxy(request: NextRequest) {
   // ===== NOT LOGGED IN =====
   // Jika belum login dan mencoba akses dashboard
   if (pathname.startsWith("/admin")) {
-    return NextResponse.redirect(
-      new URL("/auth/login", request.url)
-    );
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   return NextResponse.next();

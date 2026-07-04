@@ -81,7 +81,11 @@ type GeneralRagContext = {
   data: unknown;
 };
 
-type RetrievedContext = ProductContext | GeneralRagContext;
+type ContactFormContext = {
+  contact_form_allowed: boolean;
+};
+
+type RetrievedContext = ProductContext | GeneralRagContext | ContactFormContext;
 
 type BuiltRagContext = {
   baseKnowledge: unknown;
@@ -418,7 +422,7 @@ const RATE_LIMIT_RESPONSE = "Too many messages. Please wait a moment before send
 
 function isDuplicateMessage(text: string, history: Array<{ role: string; content: string }>): boolean {
   const lastUserMessage = [...history].reverse().find(m => m.role === "user");
-  return lastUserMessage && lastUserMessage.content.trim() === text.trim();
+  return !!lastUserMessage && lastUserMessage.content.trim() === text.trim();
 }
 
 async function checkRateLimit(sessionId: string): Promise<boolean> {
@@ -804,8 +808,8 @@ async function getFeaturedProducts(
         strongNameMatch: true,
         nameCoverage: 1,
         totalCoverage: 1,
-        matchedNameTokens: [],
-        matchedDescriptionTokens: [],
+        matchedNameTokens: [] as string[],
+        matchedDescriptionTokens: [] as string[],
       };
     })
     .filter((product): product is ProductSearchResult => product !== null);

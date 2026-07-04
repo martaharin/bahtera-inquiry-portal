@@ -2,6 +2,10 @@
 // import { NextResponse, NextRequest } from "next/server";
 // import { encrypt } from "@/lib/session";
 
+export async function POST() {
+  return Response.json({ error: "Not implemented" }, { status: 501 });
+}
+
 // export async function POST(request: NextRequest) {
 //   try {
 //     const { email, password } = await request.json();

@@ -1,5 +1,9 @@
 // "use client";
 
+export default function DashboardPage() {
+  return null;
+}
+
 // import React, { useEffect, useState } from 'react';
 // import Link from 'next/link';
 // import StatCard from '@/app/components/statcard';
