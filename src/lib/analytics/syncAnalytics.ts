@@ -26,11 +26,6 @@ export async function syncAnalytics(inquiryId: string) {
   // ======================================================
 
   const ai = await classifyIndustry(row);
-
-  // ======================================================
-  // INSERT / UPDATE ANALYTICS DASHBOARD
-  // ======================================================
-
   await db.query(
     `
     INSERT INTO analytics_dashboard

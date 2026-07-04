@@ -258,32 +258,18 @@ Example
 
 const completion:any =
 await client.chat.completions.create({
-
 model:MODEL,
-
 messages:[
-
 {
-
 role:"user",
-
 content:prompt
-
-}
-
-]
-
+}]
 });
 
 const content =
 completion.choices?.[0]?.message?.content;
-
 if(!content){
-
 throw new Error("Empty AI Response");
-
 }
-
 return JSON.parse(content);
-
 }

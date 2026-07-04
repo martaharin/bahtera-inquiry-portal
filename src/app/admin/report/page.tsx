@@ -10,13 +10,11 @@ export default function ReportPage() {
   }
 
   const currentUser = session?.user as any;
-
   if (!currentUser) {
     return null;
   }
 
   const role = currentUser.role_name?.toLowerCase().trim();
-
   const isSales =
     role === "sales" ||
     role === "sales staff";
@@ -41,7 +39,6 @@ export default function ReportPage() {
   // ==========================
   const salesDashboard =
     `https://datastudio.google.com/embed/reporting/308f9086-b5bc-4312-9689-01f0eff27f60/page/p_p0wrwuso3d?params=${filterParams}`;
-
   const dashboardUrl = isSales
     ? salesDashboard
     : executiveDashboard;
