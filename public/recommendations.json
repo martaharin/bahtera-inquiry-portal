@@ -1,0 +1,455 @@
+{
+  "version": "1.0",
+  "startKey": "start",
+  "maxItems": 4,
+  "startRecommendations": [
+    {
+      "label": "Buy a product",
+      "value": "I want to buy or check availability for a chemical product.",
+      "next": "buy",
+      "intent": "buy_from_bahtera"
+    },
+    {
+      "label": "Find a product",
+      "value": "Can you help me find the right chemical product for my application?",
+      "next": "product_finder",
+      "intent": "product_information"
+    },
+    {
+      "label": "Find an alternative",
+      "value": "I need an alternative or replacement for a product I currently use.",
+      "next": "alternative_product",
+      "intent": "product_information"
+    },
+    {
+      "label": "Request SDS / TDS / COA",
+      "value": "I need product documents such as SDS, TDS, COA, or certificate information.",
+      "next": "technical_documents",
+      "intent": "technical_support"
+    },
+    {
+      "label": "Offer products to Bahtera",
+      "value": "I am a supplier, manufacturer, or principal and want to offer products to Bahtera.",
+      "next": "supplier_partnership",
+      "intent": "supply_to_bahtera"
+    },
+    {
+      "label": "Explore industries",
+      "value": "What industries and applications does Bahtera support?",
+      "next": "industry_solution",
+      "intent": "general_information"
+    }
+  ],
+  "recommendationMap": {
+    "start": [
+      {
+        "label": "Find a product",
+        "value": "Can you help me find the right chemical product for my application?",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+
+      {
+        "label": "Request SDS / TDS / COA",
+        "value": "I need product documents such as SDS, TDS, COA, or certificate information.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      },
+
+      {
+        "label": "Contact the sales team",
+        "value": "How can I contact the sales team?",
+        "next": "sales"
+      },
+      {
+        "label": "More about Bahtera",
+        "value": "What Bahtera has done as innovation in the chemical industry?",
+        "next": "general"
+      }
+    ],
+    "buy": [
+      {
+        "label": "Request quotation",
+        "value": "I want to request a quotation for a product.",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Check availability",
+        "value": "Can you help me check product availability or stock?",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Request sample",
+        "value": "I want to request a product sample for testing.",
+        "next": "sample",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Ask documents",
+        "value": "I need SDS, TDS, COA, or certificate information for a product.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      }
+    ],
+    "product_finder": [
+      {
+        "label": "Find by application",
+        "value": "I need help finding a product based on my application.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Find by industry",
+        "value": "Can you recommend products based on my industry?",
+        "next": "industry_solution",
+        "intent": "product_information"
+      },
+      {
+        "label": "Find by function",
+        "value": "I need a product by function, such as surfactant, emulsifier, preservative, thickener, or emollient.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "View categories",
+        "value": "What product categories does Bahtera provide?",
+        "next": "product_categories",
+        "intent": "product_information"
+      }
+    ],
+    "alternative_product": [
+      {
+        "label": "Replace current material",
+        "value": "I need a replacement for a chemical product I currently use.",
+        "next": "alternative_product",
+        "intent": "product_information"
+      },
+      {
+        "label": "Replace Texapon",
+        "value": "I need a product to replace current Texapon usage.",
+        "next": "alternative_product",
+        "intent": "product_information"
+      },
+      {
+        "label": "Improve formulation cost",
+        "value": "I am looking for an alternative product to improve formulation cost or performance.",
+        "next": "technical_support",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Match performance",
+        "value": "I need an alternative with similar performance to my current material.",
+        "next": "technical_support",
+        "intent": "technical_support"
+      }
+    ],
+    "product_categories": [
+      {
+        "label": "Personal & Household Care",
+        "value": "Show me products for Personal & Household Care applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Food & Beverages",
+        "value": "Show me products for Food & Beverages applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Agriculture & Animal Care",
+        "value": "Show me products for Agriculture & Animal Care applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Industrial Solutions",
+        "value": "Show me products for Industrial Solutions applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Healthcare & Hygiene",
+        "value": "Show me products for Healthcare & Hygiene applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Paper, Packaging & Export",
+        "value": "Show me products for Paper, Packaging & Export applications.",
+        "next": "product_finder",
+        "intent": "product_information"
+      }
+    ],
+    "industry_solution": [
+      {
+        "label": "Personal care",
+        "value": "Can you recommend chemical solutions for personal care products?",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Home care / cleaning",
+        "value": "Can you recommend chemical solutions for cleaning or home care applications?",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Food and beverage",
+        "value": "Can you recommend chemical solutions for the food and beverage industry?",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Industrial application",
+        "value": "Can you recommend chemical solutions for coating, paint, ink, detergent, or industrial applications?",
+        "next": "product_finder",
+        "intent": "product_information"
+      }
+    ],
+    "quotation": [
+      {
+        "label": "Share product name",
+        "value": "I want to request a quotation. The product I need is [product name].",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Ask required info",
+        "value": "What information do you need to prepare a quotation?",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Check MOQ / packaging",
+        "value": "Can you help check MOQ, packaging, and quotation details?",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Contact sales",
+        "value": "I want the sales team to follow up on my quotation request.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      }
+    ],
+    "sample": [
+      {
+        "label": "Sample for testing",
+        "value": "I want to request a product sample for testing in my formulation.",
+        "next": "sample",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Sample requirements",
+        "value": "What information is needed to request a product sample?",
+        "next": "sample",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Sample + documents",
+        "value": "I need a sample together with SDS, TDS, or COA.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      }
+    ],
+    "technical_documents": [
+      {
+        "label": "Request SDS",
+        "value": "I need the SDS for a product.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Request TDS",
+        "value": "I need the TDS or product specification document.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Request COA",
+        "value": "I need the COA for a product batch or product inquiry.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Check certificates",
+        "value": "I need to check certificate availability such as halal, food grade, or other documents.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      }
+    ],
+    "technical_support": [
+      {
+        "label": "Formulation support",
+        "value": "I need technical support for formulation or product selection.",
+        "next": "technical_support",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Product compatibility",
+        "value": "I need help checking product compatibility for my application.",
+        "next": "technical_support",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Usage guidance",
+        "value": "I need guidance on which product type may fit my application.",
+        "next": "technical_support",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Technical follow-up",
+        "value": "I want the technical team to follow up on my inquiry.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      }
+    ],
+    "supplier_partnership": [
+      {
+        "label": "Offer product line",
+        "value": "I want to offer my company's product line to Bahtera.",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      },
+      {
+        "label": "Become supplier",
+        "value": "I want to know how to become a supplier or partner of Bahtera.",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      },
+      {
+        "label": "Principal partnership",
+        "value": "I represent a principal or manufacturer and want to discuss partnership.",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      },
+      {
+        "label": "Send company profile",
+        "value": "I want to share our company profile and product documents with Bahtera.",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      }
+    ],
+    "supplier_requirements": [
+      {
+        "label": "Required supplier info",
+        "value": "What information does Bahtera need from a potential supplier or principal?",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      },
+      {
+        "label": "Share supplied products",
+        "value": "We can supply [product line]. What details should I provide?",
+        "next": "supplier_requirements",
+        "intent": "supply_to_bahtera"
+      },
+      {
+        "label": "Partnership follow-up",
+        "value": "I want Bahtera's product or business development team to follow up.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      }
+    ],
+    "contact_sales": [
+      {
+        "label": "Sales follow-up",
+        "value": "I want the sales team to follow up on my inquiry.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      },
+      {
+        "label": "Technical follow-up",
+        "value": "I want the technical team to follow up on my product application.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      },
+      {
+        "label": "Supplier follow-up",
+        "value": "I want the product team to follow up on our supplier or partnership offer.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      },
+      {
+        "label": "Open contact form",
+        "value": "Please guide me to Bahtera's contact form.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      }
+    ],
+    "company_info": [
+      {
+        "label": "About Bahtera",
+        "value": "Tell me about PT. Bahtera Adi Jaya.",
+        "next": "company_info",
+        "intent": "general_information"
+      },
+      {
+        "label": "Industries served",
+        "value": "What industries does Bahtera serve?",
+        "next": "industry_solution",
+        "intent": "general_information"
+      },
+      {
+        "label": "Product categories",
+        "value": "What product categories does Bahtera provide?",
+        "next": "product_categories",
+        "intent": "general_information"
+      },
+      {
+        "label": "Read articles",
+        "value": "What Bahtera articles or insights are recommended to read?",
+        "next": "articles",
+        "intent": "general_information"
+      }
+    ],
+    "articles": [
+      {
+        "label": "Recommended articles",
+        "value": "What Bahtera blog posts or articles are recommended to read?",
+        "next": "articles",
+        "intent": "general_information"
+      },
+      {
+        "label": "Innovation articles",
+        "value": "What has Bahtera shared about innovation in the chemical industry?",
+        "next": "articles",
+        "intent": "general_information"
+      },
+      {
+        "label": "Exhibition news",
+        "value": "Which exhibitions or industry events has Bahtera participated in?",
+        "next": "articles",
+        "intent": "general_information"
+      }
+    ],
+    "default": [
+      {
+        "label": "Find a product",
+        "value": "Can you help me find the right chemical product?",
+        "next": "product_finder",
+        "intent": "product_information"
+      },
+      {
+        "label": "Request quotation",
+        "value": "I want to request a quotation.",
+        "next": "quotation",
+        "intent": "buy_from_bahtera"
+      },
+      {
+        "label": "Request documents",
+        "value": "I need SDS, TDS, COA, or product documents.",
+        "next": "technical_documents",
+        "intent": "technical_support"
+      },
+      {
+        "label": "Contact team",
+        "value": "I want Bahtera's team to follow up.",
+        "next": "contact_sales",
+        "intent": "contact_or_follow_up"
+      }
+    ]
+  }
+}

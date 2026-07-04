@@ -1,0 +1,38 @@
+Extract lead information from the conversation.
+
+Return only a valid JSON object.
+Do not include Markdown code fences.
+Do not include explanations before or after the JSON.
+
+Schema:
+{
+  "name": string | null,
+  "company": string | null,
+  "email": string | null,
+  "phone": string | null,
+  "location": string | null,
+  "industry": string | null,
+  "industry_scale": string | null,
+  "product_inquiry": string | null,
+  "type": string | null,
+  "reason_for_inquiry": string | null,
+  "consent_to_contact": boolean | null
+}
+
+Rules:
+- Only extract information explicitly provided by the user.
+- Do not guess.
+- Keep null if unknown.
+- industry MUST be EXACTLY one of these 6 values (copy-paste exactly, including capitalization and punctuation):
+  1. "Personal & Household Care"
+  2. "Food & Beverages"
+  3. "Agriculture & Animal Care"
+  4. "Industrial Solutions"
+  5. "Healthcare & Hygiene"
+  6. "Paper, Packaging & Export"
+  Do NOT use variations like "personal care", "household", "food and beverage", "agriculture", etc. Use ONLY the exact strings above. If the user's industry doesn't match exactly, choose the closest match from the list above.
+- consent_to_contact is true only if user clearly agrees to be contacted.
+- type cannot be empty, it must be 'Supply' or 'Purchase'. Determine based on conversation context.
+- industry_scale must be filled with the user's business' size: 'Micro' for Home industries, solopreneurs, very small-scale operations; 'Small' for Small private companies, startups, local businesses; 'Medium' for SMEs with larger facilities, established regional businesses; 'Large' for Corporations, major enterprises.
+- if the user provide at least email or phone, mark it as true for consent_to_contact
+- reason_for_inquiry is MANDATORY and MUST NEVER be null or empty. It MUST be filled with a concise summary of the entire chat session (2-4 sentences), describing what the user discussed, their needs, their product interests, and their overall intent. Example: "User inquired about surfactants for shampoo production in Indonesia, needs SDS documentation and pricing for 500kg monthly order."
