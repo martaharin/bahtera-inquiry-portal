@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server";;
 import { db } from "@/lib/db";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PermissionUser, canCreateTicket, isAdmin, isHeadSales, isSalesStaff, } from "@/lib/rbac";
+import { getPermissionKeysBySessionUser, hasPermission } from "@/lib/permissions";
 
 export async function GET(req: Request) {
   try {
@@ -22,19 +22,31 @@ export async function GET(req: Request) {
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
-
-    const roleName = currentUser.role_name;
+    const userId = session.user.user_id;
+    const industry = session.user.industry;
+    const branch = session.user.branch;
+    const roleName = session.user.role_name;
     const cleanRole = roleName?.toLowerCase().trim();
 
-    const userId = currentUser.user_id;
-    const industry = currentUser.industry;
-    const branch = currentUser.branch;
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    const canViewAllTickets = hasPermission(userPermissions, "ticket.view_all");
+    const canViewTeamTickets = hasPermission(userPermissions, "ticket.view_team");
+    const canViewOwnTickets = hasPermission(userPermissions, "ticket.view_own");
+
+    if (!canViewAllTickets && !canViewTeamTickets && !canViewOwnTickets) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    
 
     // FILTER PARAMS
     const { searchParams } = new URL(req.url);
@@ -89,39 +101,50 @@ export async function GET(req: Request) {
     const conditions: string[] = [];
 
     // ====================================================
-    // ROLE FILTER
+    // ROLE FILTER (DYNAMIC PERMISSION)
     // ====================================================
 
-    // SALES STAFF
-    if (isSalesStaff(currentUser) && userId) {
-      ticketQueryParams.push(userId);
+    // VIEW TEAM
+    if (!canViewAllTickets) {
+      if (canViewTeamTickets && industry && branch) {
+        ticketQueryParams.push(userId);
+        ticketQueryParams.push(industry);
+        ticketQueryParams.push(branch);
 
-      conditions.push(`
-        t.assigned_user_id = $${ticketQueryParams.length}
-      `);
-    }
+        const p = ticketQueryParams.length;
 
-    // HEAD SALES
-    else if (isHeadSales(currentUser) && industry && branch) {
-      ticketQueryParams.push(userId);
-      ticketQueryParams.push(industry);
-      ticketQueryParams.push(branch);
+        conditions.push(`
+          (
+            t.assigned_user_id = $${p - 2}
 
-      conditions.push(`
-        (
-          t.assigned_user_id = $1
+            OR
 
-          OR
-
-          t.assigned_user_id IN (
-            SELECT user_id
-            FROM public.sales_person
-            WHERE LOWER(industry) = LOWER($2)
-            AND LOWER(branch) = LOWER($3)
-            AND LOWER(role_name) = 'sales staff'
+            t.assigned_user_id IN (
+              SELECT user_id
+              FROM public.sales_person
+              WHERE LOWER(industry) = LOWER($${p - 1})
+              AND LOWER(branch) = LOWER($${p})
+              AND LOWER(role_name) = 'sales staff'
+            )
           )
-        )
-      `);
+        `);
+      } else if (canViewOwnTickets && userId) {
+        ticketQueryParams.push(userId);
+
+        conditions.push(`
+          t.assigned_user_id = $${ticketQueryParams.length}
+        `);
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Forbidden",
+          },
+          {
+            status: 403,
+          }
+        );
+      }
     }
 
     // ====================================================
@@ -241,7 +264,8 @@ export async function GET(req: Request) {
     const statsQueryParams: any[] = [];
 
     // SALES STAFF
-    if (isSalesStaff(currentUser) && userId) {
+    // VIEW OWN
+    if (!canViewAllTickets && !canViewTeamTickets && canViewOwnTickets && userId) {
       statsQuery = `
         SELECT
           u.user_id,
@@ -263,8 +287,8 @@ export async function GET(req: Request) {
       statsQueryParams.push(userId);
     }
 
-    // HEAD SALES
-    else if (isHeadSales(currentUser) && industry && branch) {
+    // VIEW TEAM
+    else if (!canViewAllTickets && canViewTeamTickets && industry && branch) {
       statsQuery = `
         SELECT
           u.user_id,
@@ -293,8 +317,8 @@ export async function GET(req: Request) {
       statsQueryParams.push(industry, branch);
     }
 
-    // ADMIN
-    else if (isAdmin(currentUser)) {
+    // VIEW ALL
+    else if (canViewAllTickets) {
       statsQuery = `
         SELECT
           u.user_id,
@@ -380,14 +404,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
-    if (!canCreateTicket(currentUser)) {
+    if (!hasPermission(userPermissions, "ticket.create")) {
       return NextResponse.json(
         {
           success: false,
@@ -427,7 +446,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!["Purchase", "Supply"].includes(type)) {
+    if (!["Lead", "Principal"].includes(type)) {
       return NextResponse.json(
         {
           success: false,
@@ -479,9 +498,7 @@ export async function POST(req: Request) {
 
     const inquiryId = inquiryResult.rows[0].inquiry_id;
 
-    const assignedUserId = isSalesStaff(currentUser)
-      ? currentUser.user_id
-      : null;
+    const assignedUserId = null;
 
     await db.query(
       `

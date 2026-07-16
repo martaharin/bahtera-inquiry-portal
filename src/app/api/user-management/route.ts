@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-
 import { db } from "@/lib/db";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PermissionUser, isAdmin } from "@/lib/rbac";
+import {
+  getPermissionKeysBySessionUser,
+  hasPermission,
+} from "@/lib/permissions";
 
 // ==========================================
 // GET ALL USERS
@@ -24,18 +26,13 @@ export async function GET() {
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
-
     // =========================
     // ADMIN ONLY
     // =========================
 
-    if (!isAdmin(currentUser)) {
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "user.view")) {
       return NextResponse.json(
         {
           success: false,

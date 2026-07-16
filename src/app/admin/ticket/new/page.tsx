@@ -156,7 +156,7 @@ export default function NewTicketPage() {
 
           <section className="space-y-4">
             <h2 className={sectionTitleClass}>
-              Market & Industry Detail
+              Market & Business Unit Detail
             </h2>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -173,7 +173,7 @@ export default function NewTicketPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Industry</label>
+                <label className={labelClass}>Business Unit</label>
                 <input
                   type="text"
                   name="industry"
@@ -185,7 +185,7 @@ export default function NewTicketPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Industry Scale</label>
+                <label className={labelClass}>Business Unit Scale</label>
                 <input
                   type="text"
                   name="industryScale"
@@ -216,8 +216,8 @@ export default function NewTicketPage() {
                     required
                   >
                     <option value="">Select type</option>
-                    <option value="Purchase">Purchase</option>
-                    <option value="Supply">Supply</option>
+                    <option value="Lead">Lead</option>
+                    <option value="Principal">Principal</option>
                   </select>
 
                   <svg

@@ -17,14 +17,20 @@ export function isAdmin(user: PermissionUser) {
   return normalizeRole(user.role_name) === "admin";
 }
 
-export function isHeadSales(user: PermissionUser) {
-  return normalizeRole(user.role_name) === "head sales";
+export function isSalesManager(user: PermissionUser) {
+  return normalizeRole(user.role_name) === "sales manager";
 }
 
 export function isSalesStaff(user: PermissionUser) {
   const role = normalizeRole(user.role_name);
 
   return role === "sales staff" || role === "sales";
+}
+
+export function isProductTeam(user: PermissionUser) {
+  const role = normalizeRole(user.role_name);
+
+  return role === "product team" || role === "product";
 }
 
 // ===============================
@@ -42,7 +48,7 @@ export function canViewTicket(
   }
 
   if (
-    isHeadSales(user) &&
+    isSalesManager(user) &&
     user.industry === assignedIndustry &&
     user.branch === assignedBranch
   ) {
@@ -50,7 +56,7 @@ export function canViewTicket(
   }
 
   if (
-    isSalesStaff(user) &&
+    (isSalesStaff(user) || isProductTeam(user)) &&
     user.user_id === assignedUserId
   ) {
     return true;
@@ -66,7 +72,7 @@ export function canEditTicket(
   if (isAdmin(user)) return true;
 
   if (
-    isSalesStaff(user) &&
+    (isSalesStaff(user) || isProductTeam(user)) &&
     assignedUserId === user.user_id
   ) {
     return true;
@@ -80,11 +86,11 @@ export function canDeleteTicket(user: PermissionUser) {
 }
 
 export function canAssignTicket(user: PermissionUser) {
-  return isAdmin(user) || isHeadSales(user);
+  return isAdmin(user);
 }
 
 export function canCreateTicket(user: PermissionUser) {
-  return isAdmin(user) || isSalesStaff(user);
+  return isAdmin(user) || isSalesStaff(user) || isProductTeam(user);
 }
 
 export function canConvertERP(

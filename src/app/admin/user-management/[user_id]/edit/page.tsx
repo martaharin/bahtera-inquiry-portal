@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type EditUserForm = {
   username: string;
@@ -9,6 +10,11 @@ type EditUserForm = {
   role_name: string;
   industry: string;
   branch: string;
+};
+
+type RoleItem = {
+  role_id: string;
+  role_name: string;
 };
 
 type BranchIndustryItem = {
@@ -38,6 +44,12 @@ export default function EditUserPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [roles, setRoles] = useState<RoleItem[]>([]);
+
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+  const canViewUsers = hasPermission("user.view");
+  const canEditUser = hasPermission("user.edit");
 
   const [branchIndustryList, setBranchIndustryList] = useState<
     BranchIndustryItem[]
@@ -136,90 +148,110 @@ export default function EditUserPage() {
   };
 
   useEffect(() => {
-    async function fetchEditData() {
-      try {
-        setLoading(true);
+    if (permissionLoading) return;
 
-        const [userRes, branchIndustryRes] = await Promise.all([
-          fetch(`/api/user-management/${user_id}`, {
-            cache: "no-store",
-          }),
-          fetch("/api/branch-industry", {
-            cache: "no-store",
-          }),
-        ]);
+    if (!canViewUsers || !canEditUser) {
+      router.replace("/admin/user-management");
+    }
+  }, [permissionLoading, canViewUsers, canEditUser, router]);
 
-        const userResult = await readApiResponse(userRes);
-        const branchIndustryResult = await readApiResponse(branchIndustryRes);
+  useEffect(() => {
+  async function fetchEditData() {
+    try {
+      setLoading(true);
 
-        if (!userRes.ok || !userResult.success) {
-          console.error("USER API FAILED:", {
-            status: userRes.status,
-            result: userResult,
-          });
+      const [userRes, branchIndustryRes, rolesRes] = await Promise.all([
+        fetch(`/api/user-management/${user_id}`, {
+          cache: "no-store",
+        }),
+        fetch("/api/branch-industry", {
+          cache: "no-store",
+        }),
+        fetch("/api/roles", {
+          cache: "no-store",
+        }),
+      ]);
 
-          alert(userResult.error || "Failed to load user");
-          router.push("/admin/user-management");
-          return;
-        }
+      const userResult = await readApiResponse(userRes);
+      const branchIndustryResult = await readApiResponse(branchIndustryRes);
+      const rolesResult = await readApiResponse(rolesRes);
 
-        if (!branchIndustryRes.ok || !branchIndustryResult.success) {
-          console.error("BRANCH INDUSTRY API FAILED:", {
-            status: branchIndustryRes.status,
-            result: branchIndustryResult,
-          });
-
-          alert(branchIndustryResult.error || "Failed to load branch and industry");
-          return;
-        }
-
-        const rawBranchIndustryData = Array.isArray(branchIndustryResult)
-          ? branchIndustryResult
-          : branchIndustryResult.data ||
-            branchIndustryResult.branch_industry ||
-            branchIndustryResult.branchIndustry ||
-            branchIndustryResult.branch_industries ||
-            branchIndustryResult.items ||
-            [];
-
-        const branchIndustryData: BranchIndustryItem[] =
-          rawBranchIndustryData.flatMap((branchItem: any) => {
-            if (Array.isArray(branchItem.industries)) {
-              return branchItem.industries.map((industryItem: any) => ({
-                id: `${branchItem.branch_id}-${industryItem.industry_id}`,
-                branch_id: branchItem.branch_id,
-                branch_name: branchItem.branch_name,
-                industry_id: industryItem.industry_id,
-                industry_name: industryItem.industry_name,
-              }));
-            }
-
-            return [branchItem];
-          });
-
-        console.log("branchIndustryData:", branchIndustryData);
-
-        setBranchIndustryList(branchIndustryData);
-
-        setForm({
-          username: userResult.user.user_name || "",
-          email: userResult.user.user_email || "",
-          role_name: userResult.user.role_name || "",
-          industry: userResult.user.industry || "",
-          branch: userResult.user.branch || "",
+      if (!userRes.ok || !userResult.success) {
+        console.error("USER API FAILED:", {
+          status: userRes.status,
+          result: userResult,
         });
-      } catch (error) {
-        console.error("Fetch edit user error:", error);
-        alert("Failed to load edit user data");
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    if (user_id) {
-      fetchEditData();
+        alert(userResult.error || "Failed to load user");
+        router.push("/admin/user-management");
+        return;
+      }
+
+      if (!branchIndustryRes.ok || !branchIndustryResult.success) {
+        console.error("BRANCH INDUSTRY API FAILED:", {
+          status: branchIndustryRes.status,
+          result: branchIndustryResult,
+        });
+
+        alert(branchIndustryResult.error || "Failed to load branch and industry");
+        return;
+      }
+
+      if (rolesRes.ok && rolesResult.success) {
+        setRoles(rolesResult.roles || []);
+      } else {
+        setRoles([]);
+      }
+
+      const rawBranchIndustryData = Array.isArray(branchIndustryResult)
+        ? branchIndustryResult
+        : branchIndustryResult.data ||
+          branchIndustryResult.branch_industry ||
+          branchIndustryResult.branchIndustry ||
+          branchIndustryResult.branch_industries ||
+          branchIndustryResult.items ||
+          [];
+
+      const branchIndustryData: BranchIndustryItem[] =
+        rawBranchIndustryData.flatMap((branchItem: any) => {
+          if (Array.isArray(branchItem.industries)) {
+            return branchItem.industries.map((industryItem: any) => ({
+              id: `${branchItem.branch_id}-${industryItem.industry_id}`,
+              branch_id: branchItem.branch_id,
+              branch_name: branchItem.branch_name,
+              industry_id: industryItem.industry_id,
+              industry_name: industryItem.industry_name,
+            }));
+          }
+
+          return [branchItem];
+        });
+
+      setBranchIndustryList(branchIndustryData);
+
+      setForm({
+        username: userResult.user.user_name || "",
+        email: userResult.user.user_email || "",
+        role_name: userResult.user.role_name || "",
+        industry: userResult.user.industry || "",
+        branch: userResult.user.branch || "",
+      });
+    } catch (error) {
+      console.error("Fetch edit user error:", error);
+      alert("Failed to load edit user data");
+    } finally {
+      setLoading(false);
     }
-  }, [user_id, router]);
+  }
+
+  if (permissionLoading) return;
+
+  if (!canViewUsers || !canEditUser) return;
+
+  if (user_id) {
+    fetchEditData();
+  }
+}, [user_id, router, permissionLoading, canViewUsers, canEditUser]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -243,6 +275,11 @@ export default function EditUserPage() {
   };
 
   const handleSave = async (e: React.FormEvent) => {
+    if (!canEditUser) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
     e.preventDefault();
 
     if (!form.username || !form.email || !form.role_name || !form.industry || !form.branch) {
@@ -278,7 +315,10 @@ export default function EditUserPage() {
     }
   };
 
-  if (loading) {
+  if (loading || permissionLoading) {
+    if (!canViewUsers || !canEditUser) {
+      return null;
+    }
     return (
       <div className="p-8">
         <div className="mx-auto max-w-[920px] rounded-[28px] border border-gray-100 bg-white p-7 shadow-sm">
@@ -352,9 +392,14 @@ export default function EditUserPage() {
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-800 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
                 >
                   <option value="">Select role</option>
-                  <option value="admin">Admin</option>
-                  <option value="head sales">Head Sales</option>
-                  <option value="sales staff">Sales Staff</option>
+                  {roles.map((role) => (
+                    <option key={role.role_id} value={role.role_name}>
+                      {role.role_name
+                        .split(" ")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ")}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -1,6 +1,7 @@
 // proxy.ts
 import { NextRequest, NextResponse } from "next/server";
 
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -23,7 +24,6 @@ export default async function proxy(request: NextRequest) {
 
   // ===== USER HAS SESSION =====
   if (hasSession) {
-    // Jika sudah login, cegah masuk ke halaman login kembali
     if (pathname === "/auth/login") {
       return NextResponse.redirect(new URL("/admin/ticket", request.url));
     }
@@ -31,7 +31,6 @@ export default async function proxy(request: NextRequest) {
   }
 
   // ===== NOT LOGGED IN =====
-  // Jika belum login dan mencoba akses dashboard
   if (pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }

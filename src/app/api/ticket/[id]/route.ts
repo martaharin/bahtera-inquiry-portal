@@ -2,8 +2,52 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PermissionUser, canEditTicket, canDeleteTicket, canConvertERP,canViewTicket} from "@/lib/rbac";
+import { getPermissionKeysBySessionUser, hasPermission } from "@/lib/permissions";
 import { updateAnalyticsFromTicket } from "@/lib/analytics/updateAnalyticsFromTicket";
+
+type TicketScopeRow = {
+  assigned_user_id?: string | null;
+  assigned_industry?: string | null;
+  assigned_branch?: string | null;
+};
+
+function normalizeText(value?: string | null) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function canAccessTicketScope(
+  userPermissions: string[],
+  ticket: TicketScopeRow,
+  userId?: string | null,
+  userIndustry?: string | null,
+  userBranch?: string | null
+) {
+  if (hasPermission(userPermissions, "ticket.view_all")) {
+    return true;
+  }
+
+  const isOwnTicket =
+    Boolean(ticket.assigned_user_id) &&
+    Boolean(userId) &&
+    String(ticket.assigned_user_id) === String(userId);
+
+  const isSameTeam =
+    Boolean(ticket.assigned_industry) &&
+    Boolean(ticket.assigned_branch) &&
+    normalizeText(ticket.assigned_industry) === normalizeText(userIndustry) &&
+    normalizeText(ticket.assigned_branch) === normalizeText(userBranch);
+
+  if (hasPermission(userPermissions, "ticket.view_team") && isSameTeam) {
+    return true;
+  }
+
+  if (hasPermission(userPermissions, "ticket.view_own") && isOwnTicket) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> } 
@@ -18,12 +62,18 @@ export async function GET(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userId = session.user.user_id;
+    const userIndustry = session.user.industry;
+    const userBranch = session.user.branch;
+
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "ticket.detail.view")) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
 
     const { id } = await params;
       if (!id) {
@@ -80,21 +130,17 @@ export async function GET(
     }
 
     if (
-      !canViewTicket(
-        currentUser,
-        row.assigned_user_id,
-        row.assigned_industry,
-        row.assigned_branch
+      !canAccessTicketScope(
+        userPermissions,
+        row,
+        userId,
+        userIndustry,
+        userBranch
       )
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        {
-          status: 403,
-        }
+        { success: false, error: "Forbidden" },
+        { status: 403 }
       );
     }
 
@@ -141,12 +187,20 @@ export async function PUT(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userId = session.user.user_id;
+    const userIndustry = session.user.industry;
+    const userBranch = session.user.branch;
+
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "ticket.detail.edit")) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    const canAssignTicket = hasPermission(userPermissions, "ticket.detail.assign");
 
     const { id } = await params;
     const ticketId = id;
@@ -154,11 +208,15 @@ export async function PUT(
     const ticketCheck = await db.query(
       `
       SELECT
-        inquiry_id,
-        status,
-        assigned_user_id
-      FROM public.ticket
-      WHERE ticket_id = $1
+        t.inquiry_id,
+        t.status,
+        t.assigned_user_id,
+        sp.industry AS assigned_industry,
+        sp.branch AS assigned_branch
+      FROM public.ticket t
+      LEFT JOIN public.sales_person sp
+        ON t.assigned_user_id = sp.user_id
+      WHERE t.ticket_id = $1
       LIMIT 1
       `,
       [ticketId]
@@ -177,19 +235,17 @@ export async function PUT(
       );
     }
     if (
-      !canEditTicket(
-        currentUser,
-        existingTicket.assigned_user_id
+      !canAccessTicketScope(
+        userPermissions,
+        existingTicket,
+        userId,
+        userIndustry,
+        userBranch
       )
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        {
-          status: 403,
-        }
+        { success: false, error: "Forbidden" },
+        { status: 403 }
       );
     }
 
@@ -210,8 +266,9 @@ export async function PUT(
       ? Number(status) 
       : existingTicket.status;
 
-    const finalAssignedId =
-      assigned_user_id?.trim() || null;
+    const finalAssignedId = canAssignTicket
+    ? assigned_user_id?.trim() || null
+    : existingTicket.assigned_user_id;
     
     await db.query(
       `UPDATE public.ticket 
@@ -276,21 +333,32 @@ export async function PATCH(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userId = session.user.user_id;
+    const userIndustry = session.user.industry;
+    const userBranch = session.user.branch;
+
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "ticket.detail.convert_erp")) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
 
     const { id } = await params;
     const ticketId = id;
 
     const ticketCheck = await db.query(
       `
-      SELECT assigned_user_id
-      FROM public.ticket
-      WHERE ticket_id = $1
+      SELECT
+        t.assigned_user_id,
+        sp.industry AS assigned_industry,
+        sp.branch AS assigned_branch
+      FROM public.ticket t
+      LEFT JOIN public.sales_person sp
+        ON t.assigned_user_id = sp.user_id
+      WHERE t.ticket_id = $1
       LIMIT 1
       `,
       [ticketId]
@@ -311,19 +379,17 @@ export async function PATCH(
     }
 
     if (
-      !canConvertERP(
-        currentUser,
-        existingTicket.assigned_user_id
+      !canAccessTicketScope(
+        userPermissions,
+        existingTicket,
+        userId,
+        userIndustry,
+        userBranch
       )
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        {
-          status: 403,
-        }
+        { success: false, error: "Forbidden" },
+        { status: 403 }
       );
     }
 
@@ -372,33 +438,53 @@ export async function DELETE(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userId = session.user.user_id;
+    const userIndustry = session.user.industry;
+    const userBranch = session.user.branch;
 
-    if (!canDeleteTicket(currentUser)) {
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "ticket.detail.delete")) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        {
-          status: 403,
-        }
+        { success: false, error: "Forbidden" },
+        { status: 403 }
       );
     }
 
     const ticketCheck = await db.query(
-      `SELECT inquiry_id FROM public.ticket WHERE ticket_id = $1 LIMIT 1`,
+      `
+      SELECT
+        t.inquiry_id,
+        t.assigned_user_id,
+        sp.industry AS assigned_industry,
+        sp.branch AS assigned_branch
+      FROM public.ticket t
+      LEFT JOIN public.sales_person sp
+        ON t.assigned_user_id = sp.user_id
+      WHERE t.ticket_id = $1
+      LIMIT 1
+      `,
       [ticketId]
     );
 
     const existingTicket = ticketCheck?.rows?.[0];
     if (!existingTicket) {
       return NextResponse.json({ success: false, error: "Ticket tidak ditemukan" }, { status: 404 });
+    }
+
+    if (
+      !canAccessTicketScope(
+        userPermissions,
+        existingTicket,
+        userId,
+        userIndustry,
+        userBranch
+      )
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
     }
 
     await db.query(`DELETE FROM public.ticket WHERE ticket_id = $1`, [ticketId]);

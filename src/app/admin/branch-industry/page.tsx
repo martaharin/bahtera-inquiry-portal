@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface IndustryItem {
   industry_id: string;
@@ -20,6 +22,14 @@ export default function BranchIndustryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const router = useRouter();
+
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+
+  const canViewBranchIndustry = hasPermission("branch_industry.view");
+  const canCreateBranchIndustry = hasPermission("branch_industry.create");
+  const canDeleteBranchIndustry = hasPermission("branch_industry.delete");
 
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [showIndustryModal, setShowIndustryModal] = useState(false);
@@ -49,8 +59,15 @@ export default function BranchIndustryPage() {
   };
 
   useEffect(() => {
+    if (permissionLoading) return;
+
+    if (!canViewBranchIndustry) {
+      router.replace("/admin/ticket");
+      return;
+    }
+
     fetchBranchIndustry();
-  }, []);
+  }, [permissionLoading, canViewBranchIndustry, router]);
 
   const toggleBranch = (branchId: string) => {
     setExpandedBranches((prev) => ({
@@ -71,6 +88,11 @@ export default function BranchIndustryPage() {
   };
 
   const handleAddBranch = async () => {
+    if (!canCreateBranchIndustry) {
+      alert("You do not have permission to create branch or business unit.");
+      return;
+    }
+
     if (!branchName.trim()) {
       alert("Branch name wajib diisi");
       return;
@@ -106,13 +128,18 @@ export default function BranchIndustryPage() {
   };
 
   const handleAddIndustryToBranch = async () => {
+    if (!canCreateBranchIndustry) {
+      alert("You do not have permission to create branch or business unit.");
+      return;
+    }
+
     if (!selectedBranchId) {
       alert("Branch wajib dipilih");
       return;
     }
 
     if (!industryName.trim()) {
-      alert("Industry name wajib diisi");
+      alert("Business Unit name wajib diisi");
       return;
     }
 
@@ -152,6 +179,11 @@ export default function BranchIndustryPage() {
   };
 
   const handleDeleteBranch = async (branch: BranchItem) => {
+    if (!canDeleteBranchIndustry) {
+      alert("You do not have permission to delete branch or business unit.");
+      return;
+    }
+
     const confirmDelete = window.confirm(
       `Delete branch "${branch.branch_name}"? Semua relasi industry di branch ini juga akan terhapus.`
     );
@@ -182,8 +214,13 @@ export default function BranchIndustryPage() {
     branchId: string,
     industry: IndustryItem
   ) => {
+    if (!canDeleteBranchIndustry) {
+      alert("You do not have permission to delete branch or business unit.");
+      return;
+    }
+
     const confirmDelete = window.confirm(
-      `Remove industry "${industry.industry_name}" from this branch?`
+      `Remove Business Unit "${industry.industry_name}" from this branch?`
     );
 
     if (!confirmDelete) return;
@@ -201,12 +238,24 @@ export default function BranchIndustryPage() {
       if (result.success) {
         fetchBranchIndustry();
       } else {
-        alert(result.error || "Gagal menghapus industry dari branch");
+        alert(result.error || "Gagal menghapus Business Unit dari branch");
       }
     } catch (err) {
-      alert("Terjadi kesalahan saat menghapus industry dari branch");
+      alert("Terjadi kesalahan saat menghapus Business Unit dari branch");
     }
   };
+
+  if (permissionLoading || loading) {
+    return (
+      <div className="p-8 text-sm font-medium text-gray-500">
+        Loading branch and Business Unit data...
+      </div>
+    );
+  }
+
+  if (!canViewBranchIndustry) {
+    return null;
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -220,40 +269,42 @@ export default function BranchIndustryPage() {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-black text-gray-900">
-            Branch & Industry
+            Branch & Business Unit
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            Manage branch and industry mapping for ticket assignment.
+            Manage branch and Business Unit mapping for ticket assignment.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setShowBranchModal(true)}
-            className="px-5 py-3 bg-white text-orange-600 border border-orange-100 rounded-2xl text-sm font-black shadow-sm hover:bg-orange-50 transition-all cursor-pointer"
-          >
-            Add Branch
-          </button>
+        {canCreateBranchIndustry && (
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setShowBranchModal(true)}
+              className="px-5 py-3 bg-white text-orange-600 border border-orange-100 rounded-2xl text-sm font-black shadow-sm hover:bg-orange-50 transition-all cursor-pointer"
+            >
+              Add Branch
+            </button>
 
-          <button
-            onClick={() => setShowIndustryModal(true)}
-            className="px-5 py-3 bg-orange-500 text-white rounded-2xl text-sm font-black shadow-sm hover:bg-orange-600 transition-all cursor-pointer"
-          >
-            Add Industry to Branch
-          </button>
-        </div>
+            <button
+              onClick={() => setShowIndustryModal(true)}
+              className="px-5 py-3 bg-orange-500 text-white rounded-2xl text-sm font-black shadow-sm hover:bg-orange-600 transition-all cursor-pointer"
+            >
+              Add Business Unit to Branch
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid grid-cols-12 bg-gray-50 border-b border-gray-100 px-5 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">
           <div className="col-span-5">Branch</div>
-          <div className="col-span-3">Total Industry</div>
+          <div className="col-span-3">Total Business Unit</div>
           <div className="col-span-4 text-right">Action</div>
         </div>
 
         {loading ? (
           <div className="p-8 text-sm font-medium text-gray-500">
-            Loading branch and industry data...
+            Loading branch and Business Unit data...
           </div>
         ) : error ? (
           <div className="p-8 text-sm font-medium text-red-500">
@@ -294,20 +345,22 @@ export default function BranchIndustryPage() {
                         {isExpanded ? "Hide" : "Show"}
                       </button>
 
-                      <button
-                        onClick={() => handleDeleteBranch(branch)}
-                        className="px-4 py-2 rounded-xl text-xs font-black text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                      {canDeleteBranchIndustry && (
+                        <button
+                          onClick={() => handleDeleteBranch(branch)}
+                          className="px-4 py-2 rounded-xl text-xs font-black text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      )}
+                  </div>
                   </div>
 
                   {isExpanded && (
                     <div className="bg-gray-50 px-5 py-4 border-t border-gray-100">
                       {branch.industries.length === 0 ? (
                         <div className="text-sm text-gray-400 italic">
-                          No industry added to this branch yet.
+                          No Business Unit added to this branch yet.
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -323,17 +376,16 @@ export default function BranchIndustryPage() {
                                 </span>
                               </div>
 
-                              <button
-                                onClick={() =>
-                                  handleDeleteIndustryRelation(
-                                    branch.branch_id,
-                                    industry
-                                  )
-                                }
-                                className="text-xs font-black text-rose-500 hover:text-rose-700 transition-all cursor-pointer"
-                              >
-                                Remove
-                              </button>
+                              {canDeleteBranchIndustry && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteIndustryRelation(branch.branch_id, industry)
+                                  }
+                                  className="text-xs font-black text-rose-500 hover:text-rose-700 transition-all cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -397,11 +449,11 @@ export default function BranchIndustryPage() {
         <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center px-4">
           <div className="bg-white rounded-[28px] shadow-xl w-full max-w-md p-6">
             <h2 className="text-xl font-black text-gray-900 mb-2">
-              Add Industry to Branch
+              Add Business Unit to Branch
             </h2>
 
             <p className="text-sm text-gray-500 mb-6">
-              Choose a branch, then add the industry handled by that branch.
+              Choose a branch, then add the Business Unit handled by that branch.
             </p>
 
             <div className="space-y-5 mb-6">
@@ -426,7 +478,7 @@ export default function BranchIndustryPage() {
 
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-wider">
-                  Industry Name
+                  Business Unit Name
                 </label>
 
                 <input

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { db } from "@/lib/db";
+import {
+  getPermissionKeysBySessionUser,
+  hasPermission,
+} from "@/lib/permissions";
 
 export async function GET() {
   try {
+    
     const session = await getServerSession(authOptions);
 
     if (!session) {
@@ -16,6 +20,20 @@ export async function GET() {
         },
         {
           status: 401,
+        }
+      );
+    }
+
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
+
+    if (!hasPermission(userPermissions, "branch_industry.view")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden",
+        },
+        {
+          status: 403,
         }
       );
     }

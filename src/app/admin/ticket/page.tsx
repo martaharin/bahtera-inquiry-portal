@@ -3,13 +3,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import {
-  PermissionUser,
-  isAdmin as checkIsAdmin,
-  isHeadSales as checkIsHeadSales,
-  isSalesStaff,
-  canCreateTicket as checkCanCreateTicket,
-} from "@/lib/rbac";
+import { useRouter } from "next/navigation"
+import { usePermissions } from "@/hooks/usePermissions";
+
 
 interface UserStat {
   user_id: string;
@@ -64,7 +60,9 @@ const EMPTY_FILTERS: TicketFilters = {
 };
 
 export default function TicketPage() {
+  const router = useRouter();
   const { data: session, status } = useSession();
+  const { loading: permissionLoading, hasPermission } = usePermissions();
 
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [stats, setStats] = useState<UserStat[]>([]);
@@ -86,12 +84,10 @@ export default function TicketPage() {
   const industry = session?.user.industry ?? "";
   const branch = session?.user.branch ?? "";
 
-  const cleanRole = roleName.toLowerCase().trim();
-  const isAdmin = cleanRole === "admin";
-  const isSales = cleanRole === "sales staff" || cleanRole === "sales";
-  const isHeadSales = cleanRole === "head sales";
-
-  const canCreateTicket = isAdmin || (isSales && !isHeadSales);
+  const canViewAllTickets = hasPermission("ticket.view_all");
+  const canViewTeamTickets = hasPermission("ticket.view_team");
+  const canViewOwnTickets = hasPermission("ticket.view_own");
+  const canCreateTicket = hasPermission("ticket.create");
 
   const fetchTickets = useCallback(async (currentFilters: TicketFilters) => {
     try {
@@ -146,13 +142,13 @@ export default function TicketPage() {
   }, []);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || permissionLoading) return;
 
     let defaultFilters: TicketFilters = {
       ...EMPTY_FILTERS,
     };
 
-    if (isAdmin) {
+    if (canViewAllTickets) {
       defaultFilters = {
         ...defaultFilters,
         consent: "true",
@@ -160,7 +156,7 @@ export default function TicketPage() {
       };
     }
 
-    if (isSales) {
+    if (!canViewAllTickets && !canViewTeamTickets && canViewOwnTickets) {
       defaultFilters = {
         ...defaultFilters,
         status: "1",
@@ -170,7 +166,14 @@ export default function TicketPage() {
 
     setFilters(defaultFilters);
     fetchTickets(defaultFilters);
-  }, [status, isAdmin, isSales, fetchTickets]);
+  }, [
+    status,
+    permissionLoading,
+    canViewAllTickets,
+    canViewTeamTickets,
+    canViewOwnTickets,
+    fetchTickets,
+  ]);
 
   const handleStatsFilter = (userId: string, ticketStatus: "1" | "2") => {
     const nextFilters: TicketFilters = {
@@ -214,7 +217,15 @@ export default function TicketPage() {
       : "fa-solid fa-sort-down text-orange-500 text-[10px]";
   };
 
-  if (status === "loading") {
+  if (status === "loading" || permissionLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm font-medium text-gray-500">Checking access...</p>
+      </div>
+    );
+  }
+
+  if (!canViewAllTickets && !canViewTeamTickets && !canViewOwnTickets) {
     return null;
   }
 
@@ -262,11 +273,11 @@ export default function TicketPage() {
         >
           <div className="text-left">
             <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500">
-              Sales Staff Summary
+              Staff Summary
             </h2>
 
             <p className="text-xs text-gray-400 mt-0.5">
-              {stats.length} sales staff
+              {stats.length} staff
             </p>
           </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type RoleItem = {
   role_id: string | number;
@@ -31,6 +32,9 @@ type FlatBranchIndustryItem = {
 export default function CreateAccountPage() {
   const router = useRouter();
 
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+  const canCreateUser = hasPermission("user.create");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -51,9 +55,16 @@ export default function CreateAccountPage() {
   const selectedIndustry = formData.industries[0] || "";
 
   useEffect(() => {
+    if (permissionLoading) return;
+
+    if (!canCreateUser) {
+      router.replace("/admin/user-management");
+      return;
+    }
+
     fetchRoles();
     fetchBranchIndustry();
-  }, []);
+  }, [permissionLoading, canCreateUser, router]);
 
   const fetchRoles = async () => {
     try {
@@ -175,6 +186,11 @@ export default function CreateAccountPage() {
   const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!canCreateUser) {
+      alert("You do not have permission to create users.");
+      return;
+    }
+
     if (
       !formData.name ||
       !formData.email ||
@@ -214,6 +230,22 @@ export default function CreateAccountPage() {
       setSaving(false);
     }
   };
+
+  if (permissionLoading) {
+    return (
+      <div className="p-8">
+        <div className="mx-auto max-w-[920px] rounded-[28px] border border-gray-100 bg-white p-7 shadow-sm">
+          <p className="text-sm font-semibold text-gray-400">
+            Checking access...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canCreateUser) {
+    return null;
+  }
 
   return (
     <div className="p-6 md:p-8">
@@ -334,7 +366,7 @@ export default function CreateAccountPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                  Industry
+                  Business Unit
                 </label>
 
                 <select
@@ -368,7 +400,7 @@ export default function CreateAccountPage() {
 
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || !canCreateUser}
                 className="h-11 rounded-2xl bg-orange-500 px-7 text-sm font-black uppercase tracking-widest text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Creating..." : "Create Account"}
