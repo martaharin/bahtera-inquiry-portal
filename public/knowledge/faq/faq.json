@@ -1,0 +1,75 @@
+{
+  "source": "knowledge/faq/faq.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "records": [
+    {
+      "id": "faq_documents_001",
+      "category": "technical_documents",
+      "intent": ["technical_support", "buy_from_bahtera"],
+      "keywords": [
+        "sds",
+        "tds",
+        "coa",
+        "msds",
+        "certificate",
+        "certificates",
+        "document",
+        "documents",
+        "dokumen",
+        "sertifikat",
+        "specification",
+        "specifications",
+        "spesifikasi"
+      ],
+      "priority": 8,
+      "language": "both",
+      "content": "For SDS, TDS, COA, certificates, or technical specifications, collect the user's product and contact details first; Bahtera's technical team will follow up. Do not claim access to documents unless they are provided in the retrieved context."
+    },
+    {
+      "id": "faq_pricing_001",
+      "category": "pricing",
+      "intent": ["pricing", "buy_from_bahtera"],
+      "keywords": [
+        "price",
+        "pricing",
+        "quotation",
+        "quote",
+        "cost",
+        "harga",
+        "penawaran",
+        "moq",
+        "stock",
+        "stok",
+        "availability",
+        "sample",
+        "sampel",
+        "delivery",
+        "pengiriman"
+      ],
+      "priority": 8,
+      "language": "both",
+      "content": "Pricing, quotation, MOQ, stock, availability, sample, and delivery requests are handled by the sales team. Collect the inquiry details (product, quantity, company, contact) so the team can follow up."
+    },
+    {
+      "id": "faq_contact_001",
+      "category": "contact",
+      "intent": ["contact", "general_information"],
+      "keywords": [
+        "contact",
+        "kontak",
+        "email",
+        "phone",
+        "telepon",
+        "whatsapp",
+        "address",
+        "alamat",
+        "office",
+        "kantor"
+      ],
+      "priority": 7,
+      "language": "both",
+      "content": "Guide the user to the official contact page at https://bahteraadijaya.com/en/contact, or collect their inquiry details in the chat so the team can follow up. Do not provide email addresses or phone numbers directly."
+    }
+  ]
+}
