@@ -13,36 +13,35 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setErrorMessage("");
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
 
-  try {
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-    if (!result || result.error) {
-      setErrorMessage("Email atau Password salah");
-      return;
+      if (!result || result.error) {
+        setErrorMessage("Email atau Password salah");
+        return;
+      }
+
+      router.replace("/admin/ticket");
+      router.refresh();
+    } catch (error) {
+      console.error("Login Client Error:", error);
+      setErrorMessage("Koneksi ke server auth bermasalah.");
+    } finally {
+      setIsLoading(false);
     }
-
-    router.replace("/admin/ticket");
-    router.refresh();
-  } catch (error) {
-    console.error("Login Client Error:", error);
-    setErrorMessage("Koneksi ke server auth bermasalah.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb] p-6">
       <div className="w-full max-w-[450px] bg-white rounded-[40px] shadow-sm border border-gray-100 p-10 space-y-8">
-
         {/* LOGO ATAU TITLE */}
         <div className="text-center space-y-2">
           <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
@@ -54,7 +53,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
-
           {/* EMAIL INPUT */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest">

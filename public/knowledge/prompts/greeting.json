@@ -1,0 +1,8 @@
+{
+  "source": "knowledge/prompts/greeting.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "template_id": "greeting",
+  "en": "Hello! I'm Bahtera Assistant from PT. Bahtera Adi Jaya. I can help with product inquiries, industry solutions, or supplier partnerships. How can I assist you today?",
+  "id": "Halo! Saya Bahtera Assistant dari PT. Bahtera Adi Jaya. Saya bisa membantu seputar produk, solusi industri, atau kemitraan supplier. Ada yang bisa saya bantu?"
+}

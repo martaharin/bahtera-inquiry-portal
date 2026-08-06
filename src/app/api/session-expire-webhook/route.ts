@@ -15,13 +15,14 @@ const SESSION_EXPIRY_HOURS = 8;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const secretKey = body.secret_key || request.headers.get("x-webhook-secret");
+    const secretKey =
+      body.secret_key || request.headers.get("x-webhook-secret");
 
-    if (process.env.WEBHOOK_SECRET && secretKey !== process.env.WEBHOOK_SECRET) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (
+      process.env.WEBHOOK_SECRET &&
+      secretKey !== process.env.WEBHOOK_SECRET
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const expiredSessions = await db.query(
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
         AND (extraction_status IS NULL OR extraction_status = 'pending')
       ORDER BY updated_at ASC
       LIMIT 50
-      `
+      `,
     );
 
     if (expiredSessions.rows.length === 0) {
@@ -54,13 +55,13 @@ export async function POST(request: NextRequest) {
           WHERE session_id = $1
           ORDER BY created_at ASC
           `,
-          [session.id]
+          [session.id],
         );
 
         if (messagesResult.rows.length === 0) {
           await db.query(
             `UPDATE chat_sessions SET extraction_status = 'unqualified' WHERE id = $1`,
-            [session.id]
+            [session.id],
           );
           results.push({
             session_id: session.id,
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
         if (!qualification.qualified) {
           await db.query(
             `UPDATE chat_sessions SET extraction_status = 'unqualified' WHERE id = $1`,
-            [session.id]
+            [session.id],
           );
           results.push({
             session_id: session.id,
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
         const filePath = path.join(
           process.cwd(),
           "public",
-          "inquiry-extraction-rag.txt"
+          "inquiry-extraction-rag.txt",
         );
         const fileContent = await fs.readFile(filePath, "utf-8");
 
@@ -134,21 +135,22 @@ export async function POST(request: NextRequest) {
 
         function hasValue(value: unknown) {
           return (
-            value !== null &&
-            value !== undefined &&
-            String(value).trim() !== ""
+            value !== null && value !== undefined && String(value).trim() !== ""
           );
         }
 
         // Determine ticket status based on qualification criteria
         // Status 1 = complete/qualified, Status 4 = incomplete/needs follow-up
-        const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
-        const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
+        const hasContactInfo =
+          hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+        const hasType =
+          hasValue(inquiryData.type) && inquiryData.type !== "other";
         const hasIndustry = hasValue(inquiryData.industry);
         const hasConsent = inquiryData.consent_to_contact === true;
 
         // Complete if has contact info + type + (industry or consent as bonus)
-        const isComplete = hasContactInfo && hasType && (hasIndustry || hasConsent);
+        const isComplete =
+          hasContactInfo && hasType && (hasIndustry || hasConsent);
         const ticketStatus = isComplete ? 1 : 4;
 
         const values = [
@@ -216,7 +218,7 @@ export async function POST(request: NextRequest) {
             updated_at = CURRENT_TIMESTAMP
           RETURNING inquiry_id, consent_to_contact
           `,
-          values
+          values,
         );
 
         const inquiryId = insertInquiry.rows[0];
@@ -230,12 +232,12 @@ export async function POST(request: NextRequest) {
               status = EXCLUDED.status
           RETURNING ticket_id, created_at
           `,
-          [inquiryId.inquiry_id, ticketStatus]
+          [inquiryId.inquiry_id, ticketStatus],
         );
 
         await db.query(
           `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
-          [session.id]
+          [session.id],
         );
 
         results.push({
@@ -247,14 +249,19 @@ export async function POST(request: NextRequest) {
         });
       } catch (sessionError) {
         console.error(`Error processing session ${session.id}:`, sessionError);
-        await db.query(
-          `UPDATE chat_sessions SET extraction_status = 'error' WHERE id = $1`,
-          [session.id]
-        ).catch(() => {}); // Don't fail if status update fails
+        await db
+          .query(
+            `UPDATE chat_sessions SET extraction_status = 'error' WHERE id = $1`,
+            [session.id],
+          )
+          .catch(() => {}); // Don't fail if status update fails
         results.push({
           session_id: session.id,
           status: "error",
-          reason: sessionError instanceof Error ? sessionError.message : "Unknown error",
+          reason:
+            sessionError instanceof Error
+              ? sessionError.message
+              : "Unknown error",
         });
       }
     }
@@ -262,7 +269,9 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.status === "success").length;
     const errorCount = results.filter((r) => r.status === "error").length;
     const skippedCount = results.filter((r) => r.status === "skipped").length;
-    const unqualifiedCount = results.filter((r) => r.status === "unqualified").length;
+    const unqualifiedCount = results.filter(
+      (r) => r.status === "unqualified",
+    ).length;
 
     return NextResponse.json({
       success: true,
@@ -281,7 +290,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to process session expiry webhook",
         detail: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -296,7 +305,7 @@ export async function GET() {
         AND (extraction_status IS NULL OR extraction_status = 'pending')
       ORDER BY updated_at ASC
       LIMIT 100
-      `
+      `,
     );
 
     return NextResponse.json({
@@ -307,7 +316,7 @@ export async function GET() {
     console.error("Get expired sessions error:", error);
     return NextResponse.json(
       { error: "Failed to get expired sessions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

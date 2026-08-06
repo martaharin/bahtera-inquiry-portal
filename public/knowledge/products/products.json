@@ -1,0 +1,49 @@
+{
+  "source": "knowledge/products/products.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "products": [
+    {
+      "id": "texapon_n70_t",
+      "name": "TEXAPON N 70 T 160KG",
+      "aliases": ["Texapon", "Texapon N70", "Texapon N 70", "SLES", "Sodium Laureth Sulfate"],
+      "category": "Surfactant",
+      "industry": ["Personal & Household Care", "Industrial Solutions"],
+      "applications": ["Shampoo", "Body Wash", "Liquid Soap", "Household Cleaning", "Industrial Cleaning"],
+      "benefits": ["High Foaming", "Strong Detergency", "Good Cleaning Performance", "Readily thickened with salt"],
+      "related_products": ["DEHYTON KE-AS 200KG", "TEXAPON N 703 160KG", "TEXAPON NSO IS T 200KG"],
+      "keywords": ["texapon", "sles", "sodium laureth sulfate", "surfactant", "surfaktan", "shampoo", "sampo", "sabun", "foam", "busa", "cleansing"],
+      "priority": 10,
+      "language": "both",
+      "description": "Texapon N 70 T is a concentrated sodium laureth sulfate surfactant grade used as a primary cleansing and foaming agent in personal care, household and industrial cleaning formulations. It provides strong detergency, emulsification and foam and is readily thickened with salt in suitable systems."
+    },
+    {
+      "id": "dehyton_ke_as",
+      "name": "DEHYTON KE-AS 200KG",
+      "aliases": ["Dehyton", "Dehyton KE-AS", "Cocamidopropyl Betaine", "CAPB"],
+      "category": "Surfactant",
+      "industry": ["Personal & Household Care"],
+      "applications": ["Shampoo", "Body Wash", "Liquid Soap", "Mild Cleansing Formulations"],
+      "benefits": ["Improves foam quality", "Improves mildness", "Improves viscosity response", "Compatible with anionic surfactants"],
+      "related_products": ["TEXAPON N 70 T 160KG", "DEHYTON AB 30 220KG", "DEHYTON PK 45 200KG"],
+      "keywords": ["dehyton", "cocamidopropyl betaine", "capb", "amphoteric", "surfactant", "surfaktan", "mild", "shampoo", "sabun"],
+      "priority": 10,
+      "language": "both",
+      "description": "Dehyton is an amphoteric surfactant range for mild personal-care and cleaning formulations. These grades improve foam quality, mildness, viscosity response and compatibility with anionic surfactants."
+    },
+    {
+      "id": "msg_mesh_100_200_meihua",
+      "name": "MSG MESH 100 - 200 EX MEIHUA 25KG",
+      "aliases": ["MSG", "Monosodium Glutamate", "MSG Mesh 100 - 200", "MSG Meihua"],
+      "category": "Flavor Enhancer",
+      "industry": ["Food & Beverages"],
+      "applications": ["Food Seasoning", "Processed Food", "Savory Products", "Snacks"],
+      "benefits": ["Intensifies savory and umami taste", "Fine particle-size grade (mesh 100-200)"],
+      "related_products": ["MSG MESH 100 EX FUFENG 25KG", "MSG MESH 40 EX MEIHUA 25KG", "MSG MESH 40 EX FUFENG 25KG"],
+      "keywords": ["msg", "monosodium glutamate", "flavor enhancer", "umami", "penyedap", "makanan", "food", "mesh"],
+      "priority": 10,
+      "language": "both",
+      "description": "Monosodium glutamate is a flavor enhancer used in food products to intensify savory and umami taste. Mesh size indicates the particle-size grade."
+    }
+  ]
+}

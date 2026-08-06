@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function NewTicketPage() {
   const router = useRouter();
+  const { status } = useSession();
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+
+  const canCreateTicket = hasPermission("ticket.create");
 
   const [formData, setFormData] = useState({
     company: "",
@@ -34,6 +40,14 @@ export default function NewTicketPage() {
   const sectionTitleClass =
     "border-b border-orange-50 pb-2 text-[10px] font-black uppercase tracking-[0.28em] text-orange-500";
 
+  const isLoading = status === "loading" || permissionLoading;
+
+  useEffect(() => {
+    if (!isLoading && !canCreateTicket) {
+      router.replace("/admin/ticket");
+    }
+  }, [isLoading, canCreateTicket, router]);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -49,6 +63,12 @@ export default function NewTicketPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!canCreateTicket) {
+      alert("Anda tidak memiliki izin untuk membuat tiket.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -73,6 +93,22 @@ export default function NewTicketPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm font-medium text-gray-500">Redirecting...</p>
+      </div>
+    );
+  }
+
+  if (!canCreateTicket) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm font-medium text-gray-500">Checking access...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[980px] space-y-4 px-4 pb-12">
@@ -156,7 +192,7 @@ export default function NewTicketPage() {
 
           <section className="space-y-4">
             <h2 className={sectionTitleClass}>
-              Market & Industry Detail
+              Market & Business Unit Detail
             </h2>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -173,7 +209,7 @@ export default function NewTicketPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Industry</label>
+                <label className={labelClass}>Business Unit</label>
                 <input
                   type="text"
                   name="industry"
@@ -185,7 +221,7 @@ export default function NewTicketPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Industry Scale</label>
+                <label className={labelClass}>Business Unit Scale</label>
                 <input
                   type="text"
                   name="industryScale"
@@ -216,8 +252,8 @@ export default function NewTicketPage() {
                     required
                   >
                     <option value="">Select type</option>
-                    <option value="Purchase">Purchase</option>
-                    <option value="Supply">Supply</option>
+                    <option value="Lead">Lead</option>
+                    <option value="Principal">Principal</option>
                   </select>
 
                   <svg

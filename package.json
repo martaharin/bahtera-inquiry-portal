@@ -6,12 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate": "node scripts/migrate.js",
+    "migrate:up": "node scripts/migrate.js up",
+    "migrate:down": "node scripts/migrate.js down",
+    "migrate:status": "node scripts/migrate.js status",
+    "migrate:schema": "node scripts/migrate.js schema",
+    "migrate:export": "node scripts/migrate.js export"
   },
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.64.1",
     "bcryptjs": "^3.0.3",
     "cookies-next": "^6.1.1",
+    "dotenv": "^17.4.2",
     "next": "16.2.6",
     "next-auth": "^4.24.14",
     "pg": "^8.20.0",

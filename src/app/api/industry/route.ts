@@ -16,7 +16,7 @@ export async function GET() {
         },
         {
           status: 401,
-        }
+        },
       );
     }
 
@@ -32,9 +32,7 @@ export async function GET() {
       success: true,
       industries: result.rows,
     });
-
   } catch (error: any) {
-
     console.error("FETCH INDUSTRY ERROR:", error);
 
     return NextResponse.json(
@@ -44,7 +42,7 @@ export async function GET() {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

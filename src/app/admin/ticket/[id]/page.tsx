@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface TicketData {
   ticket_id: string;
@@ -101,8 +102,13 @@ export default function DetailTicketPage({
   const [error, setError] = useState("");
   const [copiedEmail, setCopiedEmail] = useState(false);
 
-  const currentUserId = (session?.user as any)?.user_id ?? null;
-  const currentUserRole = (session?.user as any)?.role_name ?? "";
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+
+  const canViewTicketDetail = hasPermission("ticket.detail.view");
+  const canEditTicket = hasPermission("ticket.detail.edit");
+  const canAssignTicket = hasPermission("ticket.detail.assign");
+  const canConvertERP = hasPermission("ticket.detail.convert_erp");
+  const canDeleteTicket = hasPermission("ticket.detail.delete");
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -189,6 +195,13 @@ export default function DetailTicketPage({
     };
   }, [ticketId]);
 
+  useEffect(() => {
+    if (permissionLoading) return;
+    if (!canViewTicketDetail) {
+      router.replace("/admin/ticket");
+    }
+  }, [permissionLoading, canViewTicketDetail, router]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -224,7 +237,11 @@ export default function DetailTicketPage({
       // Amankan payload sebelum dikirim ke API
       const payload = {
         ...editForm,
-        assigned_user_id: editForm.assigned_user_id === "" ? null : editForm.assigned_user_id,
+        assigned_user_id: canAssignTicket
+          ? editForm.assigned_user_id === ""
+            ? null
+            : editForm.assigned_user_id
+          : ticket?.assigned_user_id ?? null,
       };
 
       const res = await fetch(`/api/ticket/${ticketId}`, {
@@ -259,7 +276,7 @@ export default function DetailTicketPage({
   };
 
   const handleDeleteTicket = async () => {
-    if (!isAdmin) {
+    if (!canDeleteTicket) {
       alert("You do not have permission to delete this ticket");
       return;
     }
@@ -334,7 +351,8 @@ export default function DetailTicketPage({
       .replace(/\n/g, "<br>");
   };
 
-  if (loading) return <div className="p-8 text-gray-500 font-medium">Memuat detail tiket...</div>;
+  if (loading || permissionLoading) return <div className="p-8 text-gray-500 font-medium">Memuat detail tiket...</div>;
+  if (!canViewTicketDetail) return null;
   if (error) return <div className="p-8 text-red-500 font-medium">Error: {error}</div>;
   if (!ticket) return <div className="p-8 text-gray-500 font-medium">Tiket tidak ditemukan</div>;
 
@@ -343,31 +361,16 @@ export default function DetailTicketPage({
     color: "bg-gray-100 text-gray-800 border-gray-200",
   };
 
-  // Normalisasi pengecekan role terpusat
-  const isAssignedSales =
-    currentUserId &&
-    ticket.assigned_user_id &&
-    String(currentUserId) === String(ticket.assigned_user_id);
-
-  const cleanRole = currentUserRole?.toLowerCase()?.trim() || "";
-
-  const isAdmin = cleanRole === "admin";
-  const isHeadSales = cleanRole === "head sales";
-  const isSales = cleanRole === "sales staff" || cleanRole === "sales";
-
-  const canEditTicket = isAdmin || (isSales && !isHeadSales && isAssignedSales);
-  const canDeleteTicket = isAdmin;
-
-  const canConvertERP = isAssignedSales;
-
   const normalizeText = (value?: string | null) => {
     return (value || "").toLowerCase().trim();
   };
 
   const ticketType = normalizeText(ticket.type);
 
-  const isPurchaseTicket = ticketType === "purchase";
-  const isSupplyTicket = ticketType === "supply";
+  const isLeadTicket =
+    ticketType === "lead" || ticketType === "purchase";
+  const isPrincipalTicket =
+    ticketType === "principal" || ticketType === "supply";
 
   const branchOptions = Array.from(
     new Set(
@@ -388,30 +391,29 @@ export default function DetailTicketPage({
   const assignedUserOptions = users.filter((user) => {
     const userRole = normalizeText(user.role_name);
 
-    if (isSupplyTicket) {
-      return userRole === "product team";
-    }
+    const sameBranch =
+      normalizeText(user.branch) === normalizeText(assignBranch);
 
-    if (isPurchaseTicket) {
+    const sameIndustry =
+      normalizeText(user.industry) === normalizeText(assignIndustry);
+
+    if (isLeadTicket) {
       return (
         (userRole === "sales staff" || userRole === "sales") &&
-        normalizeText(user.branch) === normalizeText(assignBranch) &&
-        normalizeText(user.industry) === normalizeText(assignIndustry)
+        sameBranch &&
+        sameIndustry
+      );
+    }
+
+    if (isPrincipalTicket) {
+      return (
+        (userRole === "product" || userRole === "product team") &&
+        sameBranch &&
+        sameIndustry
       );
     }
 
     return false;
-  });
-  console.log({
-    currentUserRole,
-    currentUserId,
-    cleanRole,
-    isAdmin,
-    isHeadSales,
-    isSales,
-    isAssignedSales,
-    canEditTicket,
-    ticketAssignedUser: ticket.assigned_user_id,
   });
 
   const handleStartEdit = () => {
@@ -479,9 +481,9 @@ export default function DetailTicketPage({
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-start gap-2">
               <span className="h-8 flex items-center">Assigned to:</span>
 
-              {isEditing ? (
+              {isEditing && canAssignTicket ? (
                 <div className="flex flex-wrap items-center gap-2 normal-case">
-                  {isPurchaseTicket && (
+                  {(isLeadTicket || isPrincipalTicket) && (
                     <>
                       <select
                         value={assignBranch}
@@ -513,7 +515,7 @@ export default function DetailTicketPage({
                         }}
                         className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200"
                       >
-                        <option value="">Select industry</option>
+                        <option value="">Select Business Unit</option>
                         {industryOptions.map((industry) => (
                           <option key={industry} value={industry}>
                             {industry}
@@ -528,12 +530,14 @@ export default function DetailTicketPage({
                     value={editForm.assigned_user_id}
                     onChange={handleInputChange}
                     disabled={
-                      isPurchaseTicket && (!assignBranch || !assignIndustry)
+                      (isLeadTicket || isPrincipalTicket) &&
+                      (!assignBranch || !assignIndustry)
                     }
                     className="p-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-orange-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     <option value="">
-                      {isPurchaseTicket && (!assignBranch || !assignIndustry)
+                      {(isLeadTicket || isPrincipalTicket) &&
+                      (!assignBranch || !assignIndustry)
                         ? "Select branch and industry first"
                         : "Unassigned (-)"}
                     </option>
@@ -635,9 +639,9 @@ export default function DetailTicketPage({
 
                   <button
                     onClick={handleDeleteTicket}
-                    disabled={!isAdmin}
+                    disabled={!canDeleteTicket}
                     className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
-                      isAdmin
+                      canDeleteTicket
                         ? "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 cursor-pointer"
                         : "bg-gray-100 text-gray-300 cursor-not-allowed"
                     }`}
@@ -776,7 +780,7 @@ export default function DetailTicketPage({
 
               <div className="flex items-center">
                 <span className="text-gray-400 inline-block w-24">
-                  Industry:
+                  Business Unit:
                 </span>
                 {isEditing ? (
                   <input

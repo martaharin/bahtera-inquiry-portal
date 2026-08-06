@@ -1,0 +1,129 @@
+{
+  "source": "knowledge/metadata/intents.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "intents": [
+    {
+      "intent": "buy_from_bahtera",
+      "keywords": [
+        "buy", "purchase", "order", "need", "looking for", "quotation", "quote",
+        "availability", "stock", "sample", "beli", "butuh", "pesan", "mencari",
+        "stok", "penawaran"
+      ],
+      "knowledge": ["products", "faq", "contact_policy"]
+    },
+    {
+      "intent": "supply_to_bahtera",
+      "keywords": [
+        "supply", "supplier", "suppliers", "offer", "partnership", "distributor",
+        "principal", "manufacturer", "vendor", "we supply", "represent",
+        "become supplier", "pemasok", "menawarkan", "kerja sama"
+      ],
+      "knowledge": ["suppliers", "faq", "contact_policy"]
+    },
+    {
+      "intent": "product_search",
+      "keywords": [
+        "product", "products", "produk", "cari", "search", "looking for", "mencari",
+        "ingredient", "ingredients", "bahan", "chemical", "chemicals", "kimia",
+        "surfactant", "surfaktan", "emulsifier", "pengemulsi", "emollient",
+        "emolien", "preservative", "pengawet", "thickener", "pengental",
+        "moisturizer", "moisturizing", "pelembap", "active ingredient",
+        "cosmetic active", "skin care", "skincare", "hair care", "haircare",
+        "shampoo", "sampo", "soap", "sabun", "detergent", "deterjen", "coating",
+        "paint", "defoamer", "dispersant", "uv filter", "sunscreen", "sun care",
+        "food ingredient", "feed additive", "cleaning"
+      ],
+      "knowledge": ["products"]
+    },
+    {
+      "intent": "pricing",
+      "keywords": ["price", "pricing", "quotation", "quote", "cost", "harga", "penawaran", "moq"],
+      "knowledge": ["faq", "products"]
+    },
+    {
+      "intent": "technical_support",
+      "keywords": [
+        "problem", "issue", "error", "sds", "tds", "coa", "msds", "document",
+        "documents", "dokumen", "specification", "spesifikasi", "technical"
+      ],
+      "knowledge": ["faq"]
+    },
+    {
+      "intent": "industry_solution",
+      "keywords": [
+        "industry", "industries", "industri", "sector", "sektor", "business",
+        "bisnis", "unit bisnis", "business unit", "solution", "solusi"
+      ],
+      "knowledge": ["industries"]
+    },
+    {
+      "intent": "product_categories",
+      "keywords": [
+        "category", "categories", "kategori", "product category",
+        "product categories", "kategori produk"
+      ],
+      "knowledge": ["categories"]
+    },
+    {
+      "intent": "articles",
+      "keywords": [
+        "article", "articles", "artikel", "blog", "news", "berita", "insight",
+        "wawasan", "knowledge", "pengetahuan", "innovation", "inovasi"
+      ],
+      "knowledge": ["articles"]
+    },
+    {
+      "intent": "company_info",
+      "keywords": [
+        "bahtera", "bahtera adi jaya", "company", "about", "profile", "tentang",
+        "perusahaan", "who are you", "siapa"
+      ],
+      "knowledge": ["company"]
+    },
+    {
+      "intent": "contact",
+      "keywords": [
+        "contact", "kontak", "email", "phone", "telepon", "whatsapp", "address",
+        "alamat", "office", "kantor", "reach out", "hubungi"
+      ],
+      "knowledge": ["contact_policy", "faq"]
+    }
+  ],
+  "pipeline_signals": {
+    "buy_from_bahtera": [
+      "buy", "purchase", "order", "need", "looking for", "mencari", "beli",
+      "butuh", "pesan"
+    ],
+    "supply_to_bahtera": [
+      "supply", "supplier", "offer", "partnership", "distributor", "principal",
+      "pemasok", "menawarkan", "kerja sama"
+    ]
+  },
+  "industries": [
+    {
+      "name": "Personal & Household Care",
+      "keywords": ["personal care", "household care", "cosmetic", "skincare", "soap", "shampoo", "detergent", "cleaning", "sabun", "sampo", "deterjen", "pembersih"]
+    },
+    {
+      "name": "Food & Beverages",
+      "keywords": ["food", "beverage", "makanan", "minuman", "f&b", "food and beverage", "food & beverage"]
+    },
+    {
+      "name": "Agriculture & Animal Care",
+      "keywords": ["agriculture", "animal care", "aquaculture", "pertanian", "peternakan", "perikanan", "pakan"]
+    },
+    {
+      "name": "Industrial Solutions",
+      "keywords": ["industrial", "coating", "paint", "construction", "automotive", "industri", "konstruksi", "otomotif"]
+    },
+    {
+      "name": "Healthcare & Hygiene",
+      "keywords": ["healthcare", "hygiene", "medical", "pharma", "pharmaceutical", "kesehatan", "medis", "farmasi"]
+    },
+    {
+      "name": "Paper, Packaging & Export",
+      "keywords": ["paper", "packaging", "export", "kertas", "kemasan", "ekspor"]
+    }
+  ]
+}

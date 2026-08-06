@@ -31,7 +31,7 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     const confirmLogout = window.confirm(
-      "Apakah Anda yakin ingin keluar dari sistem?"
+      "Apakah Anda yakin ingin keluar dari sistem?",
     );
 
     if (!confirmLogout) return;

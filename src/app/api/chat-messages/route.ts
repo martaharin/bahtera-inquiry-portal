@@ -351,7 +351,10 @@ function hasProductIntent(
   return selectedProductFile || containsProductIntent;
 }
 
-function detectContactInfo(text: string): { hasEmail: boolean; hasPhone: boolean } {
+function detectContactInfo(text: string): {
+  hasEmail: boolean;
+  hasPhone: boolean;
+} {
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const phoneRegex = /\+?\d{8,15}/;
   return {
@@ -360,7 +363,9 @@ function detectContactInfo(text: string): { hasEmail: boolean; hasPhone: boolean
   };
 }
 
-function hasConsentInHistory(history: Array<{ role: string; content: string }>): boolean {
+function hasConsentInHistory(
+  history: Array<{ role: string; content: string }>,
+): boolean {
   return history.some((msg) => {
     if (msg.role !== "user") return false;
     const content = msg.content.toLowerCase();
@@ -395,29 +400,49 @@ function isConsentSeeking(text: string): boolean {
 
 function isLikelySpam(text: string): { isSpam: boolean; reason: string } {
   const trimmed = text.trim();
-  
+
   if (trimmed.length < 2) return { isSpam: true, reason: "too_short" };
-  
-  if (/^[\d\s\W]+$/.test(trimmed)) return { isSpam: true, reason: "no_letters" };
-  
-  if (/^(.)\1{2,}$/.test(trimmed.replace(/\s/g, ""))) return { isSpam: true, reason: "repeated" };
-  
-  const spamPatterns = ["asdf", "qwerty", "zxcv", "test", "hello world", "hi hi hi", "hahaha", "lol", "asdfgh"];
+
+  if (/^[\d\s\W]+$/.test(trimmed))
+    return { isSpam: true, reason: "no_letters" };
+
+  if (/^(.)\1{2,}$/.test(trimmed.replace(/\s/g, "")))
+    return { isSpam: true, reason: "repeated" };
+
+  const spamPatterns = [
+    "asdf",
+    "qwerty",
+    "zxcv",
+    "test",
+    "hello world",
+    "hi hi hi",
+    "hahaha",
+    "lol",
+    "asdfgh",
+  ];
   const lower = trimmed.toLowerCase();
-  if (spamPatterns.some(p => lower === p || lower.startsWith(p + " "))) return { isSpam: true, reason: "known_spam" };
-  
+  if (spamPatterns.some((p) => lower === p || lower.startsWith(p + " ")))
+    return { isSpam: true, reason: "known_spam" };
+
   const words = lower.split(/\s+/);
-  if (words.length >= 3 && words.every(w => w === words[0])) return { isSpam: true, reason: "repeated_words" };
-  
+  if (words.length >= 3 && words.every((w) => w === words[0]))
+    return { isSpam: true, reason: "repeated_words" };
+
   return { isSpam: false, reason: "" };
 }
 
-const SPAM_RESPONSE = "I'm Bahtera Assistant, here to help with product inquiries, industry solutions, or contact information. How can I assist you today?";
-const DUPLICATE_RESPONSE = "I already received your message. Our team will respond shortly.";
-const RATE_LIMIT_RESPONSE = "Too many messages. Please wait a moment before sending another message.";
+const SPAM_RESPONSE =
+  "I'm Bahtera Assistant, here to help with product inquiries, industry solutions, or contact information. How can I assist you today?";
+const DUPLICATE_RESPONSE =
+  "I already received your message. Our team will respond shortly.";
+const RATE_LIMIT_RESPONSE =
+  "Too many messages. Please wait a moment before sending another message.";
 
-function isDuplicateMessage(text: string, history: Array<{ role: string; content: string }>): boolean {
-  const lastUserMessage = [...history].reverse().find(m => m.role === "user");
+function isDuplicateMessage(
+  text: string,
+  history: Array<{ role: string; content: string }>,
+): boolean {
+  const lastUserMessage = [...history].reverse().find((m) => m.role === "user");
   return lastUserMessage && lastUserMessage.content.trim() === text.trim();
 }
 
@@ -426,7 +451,7 @@ async function checkRateLimit(sessionId: string): Promise<boolean> {
     `SELECT COUNT(*) FROM chat_messages 
      WHERE session_id = $1 AND role = 'user' 
      AND created_at > NOW() - INTERVAL '10 seconds'`,
-    [sessionId]
+    [sessionId],
   );
   return parseInt(recentMessages.rows[0].count) >= 3;
 }
@@ -459,51 +484,142 @@ const BAHTERA_INDUSTRIES = [
 ];
 
 const INDUSTRY_KEYWORDS: Record<string, string[]> = {
-  "Personal & Household Care": ["personal care", "household care", "cosmetic", "skincare", "soap", "shampoo", "detergent", "cleaning", "sabun", "sampo", "deterjen", "pembersih"],
-  "Food & Beverages": ["food", "beverage", "makanan", "minuman", "f&b", "food and beverage", "food & beverage"],
-  "Agriculture & Animal Care": ["agriculture", "animal care", "aquaculture", "farm", "pertanian", "peternakan", "perikanan", "pakan"],
-  "Industrial Solutions": ["industrial", "coating", "paint", "construction", "automotive", "industri", "cat", "konstruksi", "otomotif"],
-  "Healthcare & Hygiene": ["healthcare", "hygiene", "medical", "pharma", "pharmaceutical", "kesehatan", "medis", "farmasi"],
-  "Paper, Packaging & Export": ["paper", "packaging", "export", "kertas", "kemasan", "ekspor"],
+  "Personal & Household Care": [
+    "personal care",
+    "household care",
+    "cosmetic",
+    "skincare",
+    "soap",
+    "shampoo",
+    "detergent",
+    "cleaning",
+    "sabun",
+    "sampo",
+    "deterjen",
+    "pembersih",
+  ],
+  "Food & Beverages": [
+    "food",
+    "beverage",
+    "makanan",
+    "minuman",
+    "f&b",
+    "food and beverage",
+    "food & beverage",
+  ],
+  "Agriculture & Animal Care": [
+    "agriculture",
+    "animal care",
+    "aquaculture",
+    "farm",
+    "pertanian",
+    "peternakan",
+    "perikanan",
+    "pakan",
+  ],
+  "Industrial Solutions": [
+    "industrial",
+    "coating",
+    "paint",
+    "construction",
+    "automotive",
+    "industri",
+    "cat",
+    "konstruksi",
+    "otomotif",
+  ],
+  "Healthcare & Hygiene": [
+    "healthcare",
+    "hygiene",
+    "medical",
+    "pharma",
+    "pharmaceutical",
+    "kesehatan",
+    "medis",
+    "farmasi",
+  ],
+  "Paper, Packaging & Export": [
+    "paper",
+    "packaging",
+    "export",
+    "kertas",
+    "kemasan",
+    "ekspor",
+  ],
 };
 
 const INTENT_KEYWORDS = {
-  buy: ["buy", "purchase", "order", "need", "looking for", "mencari", "beli", "butuh", "pesan"],
-  supply: ["supply", "supplier", "offer", "partnership", "distributor", "principal", "pemasok", "menawarkan", "kerja sama"],
+  buy: [
+    "buy",
+    "purchase",
+    "order",
+    "need",
+    "looking for",
+    "mencari",
+    "beli",
+    "butuh",
+    "pesan",
+  ],
+  supply: [
+    "supply",
+    "supplier",
+    "offer",
+    "partnership",
+    "distributor",
+    "principal",
+    "pemasok",
+    "menawarkan",
+    "kerja sama",
+  ],
 };
 
-function detectInquiryIdentity(history: Array<{ role: string; content: string }>): {
+function detectInquiryIdentity(
+  history: Array<{ role: string; content: string }>,
+): {
   hasIndustry: boolean;
   hasProduct: boolean;
   hasIntention: boolean;
   detectedIndustry: string | null;
   detectedIntention: "buy" | "supply" | null;
 } {
-  const allUserMessages = history.filter(m => m.role === "user").map(m => m.content.toLowerCase()).join(" ");
-  
+  const allUserMessages = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.toLowerCase())
+    .join(" ");
+
   let hasIndustry = false;
   let detectedIndustry: string | null = null;
   for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (keywords.some(kw => allUserMessages.includes(kw))) {
+    if (keywords.some((kw) => allUserMessages.includes(kw))) {
       hasIndustry = true;
       detectedIndustry = industry;
       break;
     }
   }
-  
-  const hasProduct = PRODUCT_INTENT_KEYWORDS.some(kw => allUserMessages.includes(kw));
-  
+
+  const hasProduct = PRODUCT_INTENT_KEYWORDS.some((kw) =>
+    allUserMessages.includes(kw),
+  );
+
   let hasIntention = false;
   let detectedIntention: "buy" | "supply" | null = null;
-  if (INTENT_KEYWORDS.buy.some(kw => allUserMessages.includes(kw))) {
+  if (INTENT_KEYWORDS.buy.some((kw) => allUserMessages.includes(kw))) {
     hasIntention = true;
     detectedIntention = "buy";
-  } else if (INTENT_KEYWORDS.supply.some(kw => allUserMessages.includes(kw))) {
+  } else if (
+    INTENT_KEYWORDS.supply.some((kw) => allUserMessages.includes(kw))
+  ) {
     hasIntention = true;
     detectedIntention = "supply";
   }
-  
-  return { hasIndustry, hasProduct, hasIntention, detectedIndustry, detectedIntention };
+
+  return {
+    hasIndustry,
+    hasProduct,
+    hasIntention,
+    detectedIndustry,
+    detectedIntention,
+  };
 }
 
 function detectPipeline(userMessage: string): {
@@ -512,24 +628,26 @@ function detectPipeline(userMessage: string): {
   hasProductIntent: boolean;
 } {
   const lower = userMessage.toLowerCase();
-  
+
   let industry: string | null = null;
   for (const [ind, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) {
+    if (keywords.some((kw) => lower.includes(kw))) {
       industry = ind;
       break;
     }
   }
-  
+
   let intention: "buy" | "supply" | null = null;
-  if (INTENT_KEYWORDS.buy.some(kw => lower.includes(kw))) {
+  if (INTENT_KEYWORDS.buy.some((kw) => lower.includes(kw))) {
     intention = "buy";
-  } else if (INTENT_KEYWORDS.supply.some(kw => lower.includes(kw))) {
+  } else if (INTENT_KEYWORDS.supply.some((kw) => lower.includes(kw))) {
     intention = "supply";
   }
-  
-  const hasProductIntent = PRODUCT_INTENT_KEYWORDS.some(kw => lower.includes(kw));
-  
+
+  const hasProductIntent = PRODUCT_INTENT_KEYWORDS.some((kw) =>
+    lower.includes(kw),
+  );
+
   return { industry, intention, hasProductIntent };
 }
 
@@ -975,10 +1093,16 @@ export async function POST(request: NextRequest) {
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "assistant", SPAM_RESPONSE],
       );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
+      await db.query(
+        `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [sessionId],
+      );
       return NextResponse.json({
         user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
+        assistant_message: {
+          ...assistantResult.rows[0],
+          isConsentConfirmation: false,
+        },
         recommendations: [],
       });
     }
@@ -993,10 +1117,16 @@ export async function POST(request: NextRequest) {
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "assistant", RATE_LIMIT_RESPONSE],
       );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
+      await db.query(
+        `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [sessionId],
+      );
       return NextResponse.json({
         user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
+        assistant_message: {
+          ...assistantResult.rows[0],
+          isConsentConfirmation: false,
+        },
         recommendations: [],
       });
     }
@@ -1025,10 +1155,16 @@ export async function POST(request: NextRequest) {
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "assistant", DUPLICATE_RESPONSE],
       );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
+      await db.query(
+        `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [sessionId],
+      );
       return NextResponse.json({
         user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
+        assistant_message: {
+          ...assistantResult.rows[0],
+          isConsentConfirmation: false,
+        },
         recommendations: [],
       });
     }
@@ -1054,15 +1190,18 @@ export async function POST(request: NextRequest) {
     const ragContext = await buildRagContext(content);
 
     const userMessageCount = countUserMessages(chronologicalHistory);
-    const hasProductIntentInHistory = hasAnyProductIntentInHistory(chronologicalHistory);
-    const shouldOfferProducts = userMessageCount >= 3 && !hasProductIntentInHistory;
+    const hasProductIntentInHistory =
+      hasAnyProductIntentInHistory(chronologicalHistory);
+    const shouldOfferProducts =
+      userMessageCount >= 3 && !hasProductIntentInHistory;
 
     if (shouldOfferProducts) {
       const featuredProducts = await getFeaturedProducts(3);
       ragContext.retrievedContext.push({
         source: "product.json",
         type: "product_search_result",
-        notice: "Proactive product suggestions for the user. The user has not asked about products yet but has chatted 3+ times without product inquiry.",
+        notice:
+          "Proactive product suggestions for the user. The user has not asked about products yet but has chatted 3+ times without product inquiry.",
         match_status: "broad_featured",
         query: {
           original: "",
@@ -1077,7 +1216,10 @@ export async function POST(request: NextRequest) {
     }
 
     const inquiryIdentity = detectInquiryIdentity(chronologicalHistory);
-    const hasInquiryIdentity = inquiryIdentity.hasIndustry || inquiryIdentity.hasProduct || inquiryIdentity.hasIntention;
+    const hasInquiryIdentity =
+      inquiryIdentity.hasIndustry ||
+      inquiryIdentity.hasProduct ||
+      inquiryIdentity.hasIntention;
     const shouldGuidePipeline = userMessageCount >= 5 && !hasInquiryIdentity;
 
     const currentMessagePipeline = detectPipeline(content);
@@ -1145,7 +1287,8 @@ ${JSON.stringify(ragContext.retrievedContext)}
 `.trim();
 
     if (shouldAskConsent) {
-      const contactType = hasEmail && hasPhone ? "email and phone" : hasEmail ? "email" : "phone";
+      const contactType =
+        hasEmail && hasPhone ? "email and phone" : hasEmail ? "email" : "phone";
       systemMessage += `\n\nIMPORTANT: The user has just provided their ${contactType}. You MUST ask for their consent to be contacted immediately in this response. Do NOT ask any other inquiry questions in this response - ONLY ask for consent. Ask something like "Thank you for sharing your contact. Do you consent to our team contacting you via ${contactType}?"`;
     }
 
@@ -1166,7 +1309,7 @@ ${JSON.stringify(ragContext.retrievedContext)}
       },
       {
         role: "system",
-        content: `IMPORTANT: This is message #${userMessageCount + 1} from the user. ${userMessageCount === 0 ? 'This is their FIRST message. Focus on answering their question directly. Do NOT ask for personal information or inquiry details yet. Build rapport first.' : userMessageCount < 3 ? 'The conversation is just starting. Answer their question, then naturally introduce 1-2 relevant follow-up questions.' : 'The conversation is progressing. Continue collecting inquiry information naturally.'}`,
+        content: `IMPORTANT: This is message #${userMessageCount + 1} from the user. ${userMessageCount === 0 ? "This is their FIRST message. Focus on answering their question directly. Do NOT ask for personal information or inquiry details yet. Build rapport first." : userMessageCount < 3 ? "The conversation is just starting. Answer their question, then naturally introduce 1-2 relevant follow-up questions." : "The conversation is progressing. Continue collecting inquiry information naturally."}`,
       },
       ...chronologicalHistory.map((row) => ({
         role: row.role,

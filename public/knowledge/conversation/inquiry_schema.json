@@ -1,0 +1,96 @@
+{
+  "source": "knowledge/conversation/inquiry_schema.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "schema_name": "bahtera_inquiry_collection_schema",
+  "purpose": "Defines the inquiry fields the backend tracks during the chat. Contains field definitions only; assistant behavior lives in assistant_rules.json and conversation pipelines live in conversation_flow.json.",
+  "fields": [
+    {
+      "key": "name",
+      "label": "Name",
+      "required": true,
+      "examples": ["Alexa", "Budi Santoso"]
+    },
+    {
+      "key": "company",
+      "label": "Company",
+      "required": true,
+      "examples": ["Shine Bright Company", "PT Contoh Manufacturing"]
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "required": true,
+      "validation_hint": "Must look like an email address."
+    },
+    {
+      "key": "phone",
+      "label": "Phone",
+      "required": true,
+      "validation_hint": "Phone or WhatsApp number; keep as string."
+    },
+    {
+      "key": "location",
+      "label": "Location",
+      "required": true,
+      "examples": ["Jakarta", "Surabaya", "Indonesia"]
+    },
+    {
+      "key": "industry",
+      "label": "Industry",
+      "required": true,
+      "allowed_values": [
+        "Personal & Household Care",
+        "Food & Beverages",
+        "Agriculture & Animal Care",
+        "Industrial Solutions",
+        "Healthcare & Hygiene",
+        "Paper, Packaging & Export"
+      ],
+      "note": "Must be one of these 6 exact values. Only mark as collected when the user explicitly states it."
+    },
+    {
+      "key": "industry_scale",
+      "label": "Industry scale",
+      "required": true,
+      "examples": ["SME", "manufacturer", "monthly usage 1 ton", "factory scale", "distributor", "farm scale"]
+    },
+    {
+      "key": "type_of_inquiry",
+      "label": "Type of inquiry",
+      "required": true,
+      "allowed_values": [
+        "buy_from_bahtera",
+        "supply_to_bahtera",
+        "product_information",
+        "technical_support",
+        "partnership",
+        "other"
+      ]
+    },
+    {
+      "key": "product_inquiry",
+      "label": "Product inquiry",
+      "required": true,
+      "examples": [
+        "Silicon Dioxide SiO2 90-130 microns",
+        "Texapon N 70",
+        "surfactant for shampoo",
+        "products offered by supplier"
+      ]
+    },
+    {
+      "key": "details",
+      "label": "Details",
+      "required": true,
+      "note": "Summary of the user's needs: application, specification, grade, packaging, quantity, required documents, timeline, or special requirements."
+    },
+    {
+      "key": "consent_to_contact",
+      "label": "Consent to contact",
+      "required": false,
+      "allowed_values": [true, false, null],
+      "note": "Ask for consent before saying the team can contact them directly."
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 const MIN_USER_MESSAGES = 3;
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 const INTENT_KEYWORDS = {
   buy: [
     "buy",
@@ -133,7 +137,6 @@ export function qualifySession(
       "agriculture",
       "animal care",
       "aquaculture",
-      "farm",
       "pertanian",
       "peternakan",
       "perikanan",
@@ -146,7 +149,6 @@ export function qualifySession(
       "construction",
       "automotive",
       "industri",
-      "cat",
       "konstruksi",
       "otomotif",
     ],
@@ -173,7 +175,13 @@ export function qualifySession(
   let hasIndustry = false;
   let detectedIndustry: string | null = null;
   for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (keywords.some((kw) => allUserText.includes(kw))) {
+    if (
+      keywords.some((kw) =>
+        new RegExp(`\\b${escapeRegExp(kw.toLowerCase())}\\b`).test(
+          allUserText.toLowerCase(),
+        ),
+      )
+    ) {
       hasIndustry = true;
       detectedIndustry = industry;
       break;
@@ -187,9 +195,9 @@ export function qualifySession(
     "ya, saya ingin dihubungi",
     "ya saya setuju",
   ];
-  const hasConsent = consentPatterns.some((pattern) =>
-    allUserText.includes(pattern),
-  );
+  const hasConsent =
+    hasContactInfo ||
+    consentPatterns.some((pattern) => allUserText.includes(pattern));
 
   const qualified =
     userMessageCount >= MIN_USER_MESSAGES && hasContactInfo && hasIntent;

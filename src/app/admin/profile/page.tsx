@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface UserProfile {
   user_id: string;
@@ -9,6 +11,13 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
+
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+
+  const canViewProfile = hasPermission("profile.view");
+  const canEditProfile = hasPermission("profile.edit");
+
   const [user, setUser] = useState<UserProfile | null>(null);
 
   const [form, setForm] = useState({
@@ -30,12 +39,12 @@ export default function ProfilePage() {
         const result = await res.json();
 
         if (result.success) {
-          setUser(result.user);
+          setUser(result.user || result.data);
 
           setForm({
-            username: result.data.user_name || "",
-            email: result.data.user_email || "",
-            password: result.data.password || "",
+            username: result.data?.user_name || result.user?.user_name || "",
+            email: result.data?.user_email || result.user?.user_email || "",
+            password: "",
             confirmPassword: "",
           });
         }
@@ -46,8 +55,15 @@ export default function ProfilePage() {
       }
     }
 
+    if (permissionLoading) return;
+
+    if (!canViewProfile) {
+      router.replace("/admin/ticket");
+      return;
+    }
+
     fetchProfile();
-  }, []);
+  }, [permissionLoading, canViewProfile, router]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -74,6 +90,11 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!canEditProfile) {
+      alert("You do not have permission to edit profile.");
+      return;
+    }
+
     if (!form.username || !form.email) {
       alert("Username dan email wajib diisi");
       return;
@@ -135,6 +156,18 @@ export default function ProfilePage() {
     }
   };
 
+  if (permissionLoading) {
+    return (
+      <div className="p-8">
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!canViewProfile) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="p-8">
@@ -159,30 +192,32 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-5 py-3 bg-orange-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-orange-600 transition-all shadow-sm"
-            >
-              Edit Profile
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
+          {canEditProfile && (
+            !isEditing ? (
               <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-3 bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-sm"
+                onClick={() => setIsEditing(true)}
+                className="px-5 py-3 bg-orange-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-orange-600 transition-all shadow-sm"
               >
-                {saving ? "Saving..." : "Save"}
+                Edit Profile
               </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !canEditProfile}
+                  className="px-5 py-3 bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
 
-              <button
-                onClick={handleCancel}
-                className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-gray-200 transition-all"
-              >
-                Cancel
-              </button>
-            </div>
+                <button
+                  onClick={handleCancel}
+                  className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            )
           )}
         </div>
 
@@ -200,7 +235,7 @@ export default function ProfilePage() {
               name="username"
               value={form.username}
               onChange={handleInputChange}
-              disabled={!isEditing}
+              disabled={!isEditing || !canEditProfile}
               className={`w-full p-4 rounded-2xl border text-sm font-bold outline-none transition-all ${
                 isEditing
                   ? "bg-gray-50 border-gray-200 text-gray-700 focus:ring-2 focus:ring-orange-200"

@@ -24,7 +24,7 @@ export async function GET() {
       )
 
       ORDER BY u.user_name ASC;
-      `
+      `,
     );
 
     return NextResponse.json(result.rows);
@@ -33,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json(
       { error: "Gagal mengambil data user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

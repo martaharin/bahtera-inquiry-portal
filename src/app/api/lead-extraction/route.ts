@@ -49,7 +49,11 @@ async function processLeadExtraction(sessionId: string) {
     };
   }
 
-  const filePath = path.join(process.cwd(), "public", "inquiry-extraction-rag.txt");
+  const filePath = path.join(
+    process.cwd(),
+    "public",
+    "inquiry-extraction-rag.txt",
+  );
   const fileContent = await fs.readFile(filePath, "utf-8");
 
   const aiMessages = [
@@ -95,7 +99,8 @@ async function processLeadExtraction(sessionId: string) {
     return value !== null && value !== undefined && String(value).trim() !== "";
   }
 
-  const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+  const hasContactInfo =
+    hasValue(inquiryData.email) || hasValue(inquiryData.phone);
   const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
   const hasIndustry = hasValue(inquiryData.industry);
   const hasConsent = inquiryData.consent_to_contact === true;
@@ -187,11 +192,10 @@ async function processLeadExtraction(sessionId: string) {
 
   await generateInsight();
 
-
   await db.query(
     `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
     [sessionId],
-);
+  );
 
   return {
     success: true,

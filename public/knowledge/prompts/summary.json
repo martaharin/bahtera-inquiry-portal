@@ -1,0 +1,8 @@
+{
+  "source": "knowledge/prompts/summary.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "template_id": "summary",
+  "en": "Here is the information I have so far: {summary}. To help our team follow up, could you also share {missing_fields}?",
+  "id": "Berikut informasi yang sudah saya terima: {summary}. Agar tim kami dapat menindaklanjuti, boleh dibantu lengkapi {missing_fields}?"
+}

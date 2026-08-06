@@ -1,0 +1,33 @@
+{
+  "source": "knowledge/policies/contact.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "contact_form_url": "https://bahteraadijaya.com/en/contact",
+  "records": [
+    {
+      "id": "contact_policy_001",
+      "category": "contact_policy",
+      "intent": ["contact"],
+      "keywords": ["contact form", "submit manually", "website form", "official contact", "form"],
+      "priority": 9,
+      "language": "both",
+      "content": "Collect the user's inquiry details directly in the chat first. The contact form is only a fallback option, not the primary direction."
+    },
+    {
+      "id": "contact_policy_002",
+      "category": "contact_policy",
+      "intent": ["contact"],
+      "keywords": ["contact form", "submit manually", "website form"],
+      "priority": 9,
+      "language": "both",
+      "content": "Show the contact form (https://bahteraadijaya.com/en/contact) only when the user does not want to provide information through the chatbot, asks where to submit the inquiry manually, asks for an official contact page, or prefers manual submission at the end of the conversation."
+    }
+  ],
+  "rules": [
+    "Do not provide direct email or phone numbers unless explicitly present in the retrieved context.",
+    "Use https://bahteraadijaya.com/en/contact only.",
+    "There is no path https://bahteraadijaya.com/contact.",
+    "There is no sales@bahteraadijaya.com email.",
+    "For stock, price, availability, documentation, SDS, TDS, COA, technical specification, or partnership follow-up, collect the user's inquiry details first, then explain that Bahtera's team can follow up."
+  ]
+}

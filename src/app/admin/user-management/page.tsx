@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface UserItem {
   user_id: string;
@@ -15,6 +17,14 @@ interface UserItem {
 export default function UserManagementPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
+  const { loading: permissionLoading, hasPermission } = usePermissions();
+
+  const canViewUsers = hasPermission("user.view");
+  const canCreateUser = hasPermission("user.create");
+  const canEditUser = hasPermission("user.edit");
+  const canDeleteUser = hasPermission("user.delete");
 
   const fetchUsers = async () => {
     try {
@@ -44,10 +54,22 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
+    if (permissionLoading) return;
+
+    if (!canViewUsers) {
+      router.replace("/admin/ticket");
+      return;
+    }
+
     fetchUsers();
-  }, []);
+  }, [permissionLoading, canViewUsers, router]);
 
   const handleDelete = async (userId: string) => {
+    if (!canDeleteUser) {
+      alert("You do not have permission to delete users.");
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this user?"
     );
@@ -91,6 +113,18 @@ export default function UserManagementPage() {
     return " text-gray-700";
   };
 
+  if (permissionLoading || loading) {
+    return (
+      <div className="py-16 text-center text-sm text-gray-500">
+        Loading users...
+      </div>
+    );
+  }
+
+  if (!canViewUsers) {
+    return null;
+  }
+
   return (
     <div className="space-y-4 pb-8">
       {/* HEADER */}
@@ -105,11 +139,20 @@ export default function UserManagementPage() {
           </p>
         </div>
 
-        <Link href="/admin/user-management/create-account">
-          <button className="px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer">
+        {canCreateUser ? (
+          <Link href="/admin/user-management/create-account">
+            <button className="px-4 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer">
+              Create Account
+            </button>
+          </Link>
+        ) : (
+          <button
+            disabled
+            className="px-4 py-2 bg-gray-200 text-gray-400 rounded-xl font-bold text-xs opacity-50 cursor-not-allowed pointer-events-none"
+          >
             Create Account
           </button>
-        </Link>
+        )}
       </div>
 
       {/* TABLE */}
@@ -139,7 +182,7 @@ export default function UserManagementPage() {
                 </th>
 
                 <th className="px-3 py-2 text-center text-xs font-semibold uppercase text-gray-500">
-                  Industry
+                  Business Unit
                 </th>
 
                 <th className="px-3 py-2 text-center text-xs font-semibold uppercase text-gray-500">
@@ -200,18 +243,28 @@ export default function UserManagementPage() {
                   {/* ACTION */}
                   <td className="px-3 py-1.5 text-center">
                     <div className="flex items-center justify-center gap-4">
-                      <Link href={`/admin/user-management/${user.user_id}/edit`}>
-                        <button className="text-orange-500 hover:text-orange-700 font-medium text-[13px] cursor-pointer">
-                          Edit
-                        </button>
-                      </Link>
+                      {canEditUser && (
+                        <Link href={`/admin/user-management/${user.user_id}/edit`}>
+                          <button className="text-orange-500 hover:text-orange-700 font-medium text-[13px] cursor-pointer">
+                            Edit
+                          </button>
+                        </Link>
+                      )}
 
-                      <button
-                        onClick={() => handleDelete(user.user_id)}
-                        className="text-red-500 hover:text-red-700 font-medium text-[13px] cursor-pointer"
-                      >
-                        Delete
-                      </button>
+                      {canDeleteUser && (
+                        <button
+                          onClick={() => handleDelete(user.user_id)}
+                          className="text-red-500 hover:text-red-700 font-medium text-[13px] cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      )}
+
+                      {!canEditUser && !canDeleteUser && (
+                        <span className="text-gray-300 text-[13px] font-medium">
+                          No action
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
