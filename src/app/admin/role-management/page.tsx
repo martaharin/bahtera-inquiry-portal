@@ -206,7 +206,7 @@ export default function RoleManagementPage() {
             disabled={isCreating}
             className="h-11 px-5 rounded-xl bg-orange-500 text-white text-xs font-black hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {isCreating ? "Creating..." : "Save Role"}
+            {isCreating ? "Creating..." : "Save"}
           </button>
 
           <button

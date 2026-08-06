@@ -426,7 +426,7 @@ export default function EditUserPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                  Industry
+                  Business Unit
                 </label>
 
                 <select
@@ -437,7 +437,7 @@ export default function EditUserPage() {
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-800 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:text-gray-300"
                 >
                   <option value="">
-                    {form.branch ? "Select industry" : "Select branch first"}
+                    {form.branch ? "Select Business Unit" : "Select branch first"}
                   </option>
 
                   {industryOptions.map((industry) => (

@@ -185,7 +185,7 @@ export default function BranchIndustryPage() {
     }
 
     const confirmDelete = window.confirm(
-      `Delete branch "${branch.branch_name}"? Semua relasi industry di branch ini juga akan terhapus.`
+      `Delete branch "${branch.branch_name}"? All industry relationships in this branch will also be deleted.`
     );
 
     if (!confirmDelete) return;
@@ -383,7 +383,7 @@ export default function BranchIndustryPage() {
                                   }
                                   className="text-xs font-black text-rose-500 hover:text-rose-700 transition-all cursor-pointer"
                                 >
-                                  Remove
+                                  Delete
                                 </button>
                               )}
                             </div>
@@ -505,7 +505,7 @@ export default function BranchIndustryPage() {
                 disabled={saving}
                 className="px-5 py-3 rounded-2xl bg-orange-500 text-white text-sm font-black hover:bg-orange-600 transition-all cursor-pointer disabled:opacity-60"
               >
-                {saving ? "Saving..." : "Save Industry"}
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
