@@ -32,6 +32,10 @@ export function detectIntents(
     .sort((a, b) => b.score - a.score);
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function detectIndustry(
   text: string,
   industries: IndustryDefinition[],
@@ -39,7 +43,11 @@ export function detectIndustry(
   const lower = text.toLowerCase();
 
   for (const industry of industries) {
-    if (industry.keywords.some((keyword) => lower.includes(keyword))) {
+    if (
+      industry.keywords.some((keyword) =>
+        new RegExp(`\\b${escapeRegExp(keyword.toLowerCase())}\\b`).test(lower),
+      )
+    ) {
       return industry.name;
     }
   }
