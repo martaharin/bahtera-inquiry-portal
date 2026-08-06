@@ -1,31 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-<<<<<<< HEAD
-import {
-  buildConversationState,
-} from "@/lib/chat/conversation/state";
-import { decideNextAction } from "@/lib/chat/conversation/pipeline";
-import { retrievalProvider } from "@/lib/chat/knowledge/retriever";
-import { buildContextText } from "@/lib/chat/knowledge/contextBuilder";
-import {
-  loadConversationFlow,
-  loadIntentMetadata,
-} from "@/lib/chat/knowledge/loader";
-import { buildSystemPrompt } from "@/lib/chat/prompts/builder";
-import { createChatCompletion } from "@/lib/chat/llm";
-import {
-  checkRateLimit,
-  DUPLICATE_RESPONSE,
-  isDuplicateMessage,
-  isLikelySpam,
-  RATE_LIMIT_RESPONSE,
-  SPAM_RESPONSE,
-} from "@/lib/chat/guards";
-import type { ChatHistoryMessage } from "@/lib/chat/types";
-
-const origin = process.env.NEXT_PUBLIC_APP_URL;
-
-=======
 import Cerebras from "@cerebras/cerebras_cloud_sdk";
 import fs from "fs/promises";
 import path from "path";
@@ -36,7 +10,6 @@ const origin = process.env.NEXT_PUBLIC_APP_URL;
 const client = new Cerebras({
   apiKey: process.env["CEREBRAS_API_KEY"],
 });
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 type ChatRole = "user" | "assistant";
 
 type ChatRequestBody = {
@@ -45,20 +18,6 @@ type ChatRequestBody = {
   content?: string;
 };
 
-<<<<<<< HEAD
-/**
- * POST /api/chat-messages
- *
- * Thin orchestrator. The heavy lifting lives in src/lib/chat:
- *  - guards.ts                    spam / duplicate / rate limit
- *  - conversation/state.ts        deterministic conversation state
- *  - conversation/pipeline.ts     backend-decided next action
- *  - knowledge/retriever.ts       intent routing + scored retrieval
- *  - knowledge/contextBuilder.ts  readable context (no raw JSON)
- *  - prompts/builder.ts           system prompt assembly
- *  - llm.ts                       Cerebras client
- */
-=======
 type RagFile = {
   file: string;
   keywords: string[];
@@ -392,7 +351,10 @@ function hasProductIntent(
   return selectedProductFile || containsProductIntent;
 }
 
-function detectContactInfo(text: string): { hasEmail: boolean; hasPhone: boolean } {
+function detectContactInfo(text: string): {
+  hasEmail: boolean;
+  hasPhone: boolean;
+} {
   const emailRegex = /[\w.-]+@[\w.-]+\.\w+/;
   const phoneRegex = /\+?\d{8,15}/;
   return {
@@ -401,7 +363,9 @@ function detectContactInfo(text: string): { hasEmail: boolean; hasPhone: boolean
   };
 }
 
-function hasConsentInHistory(history: Array<{ role: string; content: string }>): boolean {
+function hasConsentInHistory(
+  history: Array<{ role: string; content: string }>,
+): boolean {
   return history.some((msg) => {
     if (msg.role !== "user") return false;
     const content = msg.content.toLowerCase();
@@ -436,29 +400,49 @@ function isConsentSeeking(text: string): boolean {
 
 function isLikelySpam(text: string): { isSpam: boolean; reason: string } {
   const trimmed = text.trim();
-  
+
   if (trimmed.length < 2) return { isSpam: true, reason: "too_short" };
-  
-  if (/^[\d\s\W]+$/.test(trimmed)) return { isSpam: true, reason: "no_letters" };
-  
-  if (/^(.)\1{2,}$/.test(trimmed.replace(/\s/g, ""))) return { isSpam: true, reason: "repeated" };
-  
-  const spamPatterns = ["asdf", "qwerty", "zxcv", "test", "hello world", "hi hi hi", "hahaha", "lol", "asdfgh"];
+
+  if (/^[\d\s\W]+$/.test(trimmed))
+    return { isSpam: true, reason: "no_letters" };
+
+  if (/^(.)\1{2,}$/.test(trimmed.replace(/\s/g, "")))
+    return { isSpam: true, reason: "repeated" };
+
+  const spamPatterns = [
+    "asdf",
+    "qwerty",
+    "zxcv",
+    "test",
+    "hello world",
+    "hi hi hi",
+    "hahaha",
+    "lol",
+    "asdfgh",
+  ];
   const lower = trimmed.toLowerCase();
-  if (spamPatterns.some(p => lower === p || lower.startsWith(p + " "))) return { isSpam: true, reason: "known_spam" };
-  
+  if (spamPatterns.some((p) => lower === p || lower.startsWith(p + " ")))
+    return { isSpam: true, reason: "known_spam" };
+
   const words = lower.split(/\s+/);
-  if (words.length >= 3 && words.every(w => w === words[0])) return { isSpam: true, reason: "repeated_words" };
-  
+  if (words.length >= 3 && words.every((w) => w === words[0]))
+    return { isSpam: true, reason: "repeated_words" };
+
   return { isSpam: false, reason: "" };
 }
 
-const SPAM_RESPONSE = "I'm Bahtera Assistant, here to help with product inquiries, industry solutions, or contact information. How can I assist you today?";
-const DUPLICATE_RESPONSE = "I already received your message. Our team will respond shortly.";
-const RATE_LIMIT_RESPONSE = "Too many messages. Please wait a moment before sending another message.";
+const SPAM_RESPONSE =
+  "I'm Bahtera Assistant, here to help with product inquiries, industry solutions, or contact information. How can I assist you today?";
+const DUPLICATE_RESPONSE =
+  "I already received your message. Our team will respond shortly.";
+const RATE_LIMIT_RESPONSE =
+  "Too many messages. Please wait a moment before sending another message.";
 
-function isDuplicateMessage(text: string, history: Array<{ role: string; content: string }>): boolean {
-  const lastUserMessage = [...history].reverse().find(m => m.role === "user");
+function isDuplicateMessage(
+  text: string,
+  history: Array<{ role: string; content: string }>,
+): boolean {
+  const lastUserMessage = [...history].reverse().find((m) => m.role === "user");
   return lastUserMessage && lastUserMessage.content.trim() === text.trim();
 }
 
@@ -467,7 +451,7 @@ async function checkRateLimit(sessionId: string): Promise<boolean> {
     `SELECT COUNT(*) FROM chat_messages 
      WHERE session_id = $1 AND role = 'user' 
      AND created_at > NOW() - INTERVAL '10 seconds'`,
-    [sessionId]
+    [sessionId],
   );
   return parseInt(recentMessages.rows[0].count) >= 3;
 }
@@ -500,51 +484,142 @@ const BAHTERA_INDUSTRIES = [
 ];
 
 const INDUSTRY_KEYWORDS: Record<string, string[]> = {
-  "Personal & Household Care": ["personal care", "household care", "cosmetic", "skincare", "soap", "shampoo", "detergent", "cleaning", "sabun", "sampo", "deterjen", "pembersih"],
-  "Food & Beverages": ["food", "beverage", "makanan", "minuman", "f&b", "food and beverage", "food & beverage"],
-  "Agriculture & Animal Care": ["agriculture", "animal care", "aquaculture", "farm", "pertanian", "peternakan", "perikanan", "pakan"],
-  "Industrial Solutions": ["industrial", "coating", "paint", "construction", "automotive", "industri", "cat", "konstruksi", "otomotif"],
-  "Healthcare & Hygiene": ["healthcare", "hygiene", "medical", "pharma", "pharmaceutical", "kesehatan", "medis", "farmasi"],
-  "Paper, Packaging & Export": ["paper", "packaging", "export", "kertas", "kemasan", "ekspor"],
+  "Personal & Household Care": [
+    "personal care",
+    "household care",
+    "cosmetic",
+    "skincare",
+    "soap",
+    "shampoo",
+    "detergent",
+    "cleaning",
+    "sabun",
+    "sampo",
+    "deterjen",
+    "pembersih",
+  ],
+  "Food & Beverages": [
+    "food",
+    "beverage",
+    "makanan",
+    "minuman",
+    "f&b",
+    "food and beverage",
+    "food & beverage",
+  ],
+  "Agriculture & Animal Care": [
+    "agriculture",
+    "animal care",
+    "aquaculture",
+    "farm",
+    "pertanian",
+    "peternakan",
+    "perikanan",
+    "pakan",
+  ],
+  "Industrial Solutions": [
+    "industrial",
+    "coating",
+    "paint",
+    "construction",
+    "automotive",
+    "industri",
+    "cat",
+    "konstruksi",
+    "otomotif",
+  ],
+  "Healthcare & Hygiene": [
+    "healthcare",
+    "hygiene",
+    "medical",
+    "pharma",
+    "pharmaceutical",
+    "kesehatan",
+    "medis",
+    "farmasi",
+  ],
+  "Paper, Packaging & Export": [
+    "paper",
+    "packaging",
+    "export",
+    "kertas",
+    "kemasan",
+    "ekspor",
+  ],
 };
 
 const INTENT_KEYWORDS = {
-  buy: ["buy", "purchase", "order", "need", "looking for", "mencari", "beli", "butuh", "pesan"],
-  supply: ["supply", "supplier", "offer", "partnership", "distributor", "principal", "pemasok", "menawarkan", "kerja sama"],
+  buy: [
+    "buy",
+    "purchase",
+    "order",
+    "need",
+    "looking for",
+    "mencari",
+    "beli",
+    "butuh",
+    "pesan",
+  ],
+  supply: [
+    "supply",
+    "supplier",
+    "offer",
+    "partnership",
+    "distributor",
+    "principal",
+    "pemasok",
+    "menawarkan",
+    "kerja sama",
+  ],
 };
 
-function detectInquiryIdentity(history: Array<{ role: string; content: string }>): {
+function detectInquiryIdentity(
+  history: Array<{ role: string; content: string }>,
+): {
   hasIndustry: boolean;
   hasProduct: boolean;
   hasIntention: boolean;
   detectedIndustry: string | null;
   detectedIntention: "buy" | "supply" | null;
 } {
-  const allUserMessages = history.filter(m => m.role === "user").map(m => m.content.toLowerCase()).join(" ");
-  
+  const allUserMessages = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.toLowerCase())
+    .join(" ");
+
   let hasIndustry = false;
   let detectedIndustry: string | null = null;
   for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (keywords.some(kw => allUserMessages.includes(kw))) {
+    if (keywords.some((kw) => allUserMessages.includes(kw))) {
       hasIndustry = true;
       detectedIndustry = industry;
       break;
     }
   }
-  
-  const hasProduct = PRODUCT_INTENT_KEYWORDS.some(kw => allUserMessages.includes(kw));
-  
+
+  const hasProduct = PRODUCT_INTENT_KEYWORDS.some((kw) =>
+    allUserMessages.includes(kw),
+  );
+
   let hasIntention = false;
   let detectedIntention: "buy" | "supply" | null = null;
-  if (INTENT_KEYWORDS.buy.some(kw => allUserMessages.includes(kw))) {
+  if (INTENT_KEYWORDS.buy.some((kw) => allUserMessages.includes(kw))) {
     hasIntention = true;
     detectedIntention = "buy";
-  } else if (INTENT_KEYWORDS.supply.some(kw => allUserMessages.includes(kw))) {
+  } else if (
+    INTENT_KEYWORDS.supply.some((kw) => allUserMessages.includes(kw))
+  ) {
     hasIntention = true;
     detectedIntention = "supply";
   }
-  
-  return { hasIndustry, hasProduct, hasIntention, detectedIndustry, detectedIntention };
+
+  return {
+    hasIndustry,
+    hasProduct,
+    hasIntention,
+    detectedIndustry,
+    detectedIntention,
+  };
 }
 
 function detectPipeline(userMessage: string): {
@@ -553,24 +628,26 @@ function detectPipeline(userMessage: string): {
   hasProductIntent: boolean;
 } {
   const lower = userMessage.toLowerCase();
-  
+
   let industry: string | null = null;
   for (const [ind, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) {
+    if (keywords.some((kw) => lower.includes(kw))) {
       industry = ind;
       break;
     }
   }
-  
+
   let intention: "buy" | "supply" | null = null;
-  if (INTENT_KEYWORDS.buy.some(kw => lower.includes(kw))) {
+  if (INTENT_KEYWORDS.buy.some((kw) => lower.includes(kw))) {
     intention = "buy";
-  } else if (INTENT_KEYWORDS.supply.some(kw => lower.includes(kw))) {
+  } else if (INTENT_KEYWORDS.supply.some((kw) => lower.includes(kw))) {
     intention = "supply";
   }
-  
-  const hasProductIntent = PRODUCT_INTENT_KEYWORDS.some(kw => lower.includes(kw));
-  
+
+  const hasProductIntent = PRODUCT_INTENT_KEYWORDS.some((kw) =>
+    lower.includes(kw),
+  );
+
   return { industry, intention, hasProductIntent };
 }
 
@@ -974,50 +1051,29 @@ async function buildRagContext(userMessage: string): Promise<BuiltRagContext> {
   };
 }
 
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as ChatRequestBody;
 
     const sessionId = body.session_id?.trim();
-<<<<<<< HEAD
-    const role = body.role;
-=======
 
     const role = body.role;
 
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const content = body.content?.trim();
 
     if (!sessionId || !role || !content) {
       return NextResponse.json(
-<<<<<<< HEAD
-        { error: "session_id, role, and content are required" },
-        { status: 400 },
-=======
         {
           error: "session_id, role, and content are required",
         },
         {
           status: 400,
         },
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       );
     }
 
     if (role !== "user") {
       return NextResponse.json(
-<<<<<<< HEAD
-        { error: "Only user messages can be sent" },
-        { status: 400 },
-      );
-    }
-
-    const saveCannedExchange = async (
-      assistantText: string,
-      guard: "spam" | "rate_limit" | "duplicate",
-    ) => {
-=======
         {
           error: "Only user messages can be sent",
         },
@@ -1029,15 +1085,13 @@ export async function POST(request: NextRequest) {
 
     const spamCheck = isLikelySpam(content);
     if (spamCheck.isSpam) {
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       const userResult = await db.query(
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "user", content],
       );
       const assistantResult = await db.query(
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
-<<<<<<< HEAD
-        [sessionId, "assistant", assistantText],
+        [sessionId, "assistant", SPAM_RESPONSE],
       );
       await db.query(
         `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
@@ -1047,28 +1101,8 @@ export async function POST(request: NextRequest) {
         user_message: userResult.rows[0],
         assistant_message: {
           ...assistantResult.rows[0],
+          isConsentConfirmation: false,
         },
-        recommendations: [],
-        // Lets the frontend distinguish a canned guard reply from a real
-        // AI answer (important for the retry flow).
-        guard,
-      });
-    };
-
-    const spamCheck = isLikelySpam(content);
-    if (spamCheck.isSpam) {
-      return saveCannedExchange(SPAM_RESPONSE, "spam");
-    }
-
-    if (await checkRateLimit(sessionId)) {
-      return saveCannedExchange(RATE_LIMIT_RESPONSE, "rate_limit");
-=======
-        [sessionId, "assistant", SPAM_RESPONSE],
-      );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
-      return NextResponse.json({
-        user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
         recommendations: [],
       });
     }
@@ -1083,13 +1117,18 @@ export async function POST(request: NextRequest) {
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "assistant", RATE_LIMIT_RESPONSE],
       );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
+      await db.query(
+        `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [sessionId],
+      );
       return NextResponse.json({
         user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
+        assistant_message: {
+          ...assistantResult.rows[0],
+          isConsentConfirmation: false,
+        },
         recommendations: [],
       });
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     }
 
     const historyResult = await db.query(
@@ -1105,112 +1144,6 @@ export async function POST(request: NextRequest) {
       [sessionId],
     );
 
-<<<<<<< HEAD
-    const chronologicalHistory =
-      historyResult.rows.reverse() as ChatHistoryMessage[];
-
-    if (isDuplicateMessage(content, chronologicalHistory)) {
-      return saveCannedExchange(DUPLICATE_RESPONSE, "duplicate");
-    }
-
-    // If the last user message is identical but was never answered (a
-    // previous attempt failed between persisting the user message and the
-    // assistant reply), this is a retry: reuse the existing row instead of
-    // inserting a duplicate user message.
-    const lastUserMessage = [...chronologicalHistory]
-      .reverse()
-      .find((message) => message.role === "user");
-
-    const isUnansweredRetry =
-      !!lastUserMessage && lastUserMessage.content.trim() === content;
-
-    let userMessageRow;
-
-    if (isUnansweredRetry) {
-      const existingResult = await db.query(
-        `
-          SELECT
-            id,
-            session_id,
-            role,
-            content,
-            created_at
-          FROM chat_messages
-          WHERE session_id = $1 AND role = 'user'
-          ORDER BY created_at DESC, id DESC
-          LIMIT 1
-          `,
-        [sessionId],
-      );
-      userMessageRow = existingResult.rows[0];
-    } else {
-      const userResult = await db.query(
-        `
-          INSERT INTO chat_messages (
-            session_id,
-            role,
-            content
-          )
-          VALUES ($1, $2, $3)
-          RETURNING
-            id,
-            session_id,
-            role,
-            content,
-            created_at
-          `,
-        [sessionId, "user", content],
-      );
-      userMessageRow = userResult.rows[0];
-    }
-
-    // --- Conversation state (deterministic, independent of RAG) -------------
-    const [intentMetadata, conversationFlow] = await Promise.all([
-      loadIntentMetadata(),
-      loadConversationFlow(),
-    ]);
-
-    const productIntentKeywords =
-      intentMetadata.intents.find(
-        (definition) => definition.intent === "product_search",
-      )?.keywords ?? [];
-
-    // On an unanswered retry the current message is already the last row of
-    // chronologicalHistory; the state builder expects history BEFORE the
-    // latest message, so exclude it to keep counts and triggers accurate.
-    const state = buildConversationState(
-      isUnansweredRetry ? chronologicalHistory.slice(0, -1) : chronologicalHistory,
-      content,
-      {
-        intents: intentMetadata,
-        flow: conversationFlow,
-        productIntentKeywords,
-      },
-    );
-
-    // --- Retrieval (scored, thresholded, intent-routed) ----------------------
-    const { documents, productContext } = await retrievalProvider.retrieve({
-      userMessage: content,
-      state,
-    });
-
-    state.recommendedProducts = (productContext?.relatedProducts ?? []).map(
-      (product) => product.name,
-    );
-
-    // --- Backend decides the next action --------------------------------------
-    const action = decideNextAction(state);
-
-    // --- Prompt assembly (readable context, never raw JSON) ---------------------
-    const contextText = buildContextText(documents);
-
-    const systemMessage = await buildSystemPrompt({
-      state,
-      action,
-      contextText,
-      productContext,
-    });
-=======
     const chronologicalHistory = historyResult.rows.reverse();
 
     if (isDuplicateMessage(content, chronologicalHistory)) {
@@ -1222,10 +1155,16 @@ export async function POST(request: NextRequest) {
         `INSERT INTO chat_messages (session_id, role, content) VALUES ($1, $2, $3) RETURNING id, session_id, role, content, created_at`,
         [sessionId, "assistant", DUPLICATE_RESPONSE],
       );
-      await db.query(`UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [sessionId]);
+      await db.query(
+        `UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+        [sessionId],
+      );
       return NextResponse.json({
         user_message: userResult.rows[0],
-        assistant_message: { ...assistantResult.rows[0], isConsentConfirmation: false },
+        assistant_message: {
+          ...assistantResult.rows[0],
+          isConsentConfirmation: false,
+        },
         recommendations: [],
       });
     }
@@ -1251,15 +1190,18 @@ export async function POST(request: NextRequest) {
     const ragContext = await buildRagContext(content);
 
     const userMessageCount = countUserMessages(chronologicalHistory);
-    const hasProductIntentInHistory = hasAnyProductIntentInHistory(chronologicalHistory);
-    const shouldOfferProducts = userMessageCount >= 3 && !hasProductIntentInHistory;
+    const hasProductIntentInHistory =
+      hasAnyProductIntentInHistory(chronologicalHistory);
+    const shouldOfferProducts =
+      userMessageCount >= 3 && !hasProductIntentInHistory;
 
     if (shouldOfferProducts) {
       const featuredProducts = await getFeaturedProducts(3);
       ragContext.retrievedContext.push({
         source: "product.json",
         type: "product_search_result",
-        notice: "Proactive product suggestions for the user. The user has not asked about products yet but has chatted 3+ times without product inquiry.",
+        notice:
+          "Proactive product suggestions for the user. The user has not asked about products yet but has chatted 3+ times without product inquiry.",
         match_status: "broad_featured",
         query: {
           original: "",
@@ -1274,7 +1216,10 @@ export async function POST(request: NextRequest) {
     }
 
     const inquiryIdentity = detectInquiryIdentity(chronologicalHistory);
-    const hasInquiryIdentity = inquiryIdentity.hasIndustry || inquiryIdentity.hasProduct || inquiryIdentity.hasIntention;
+    const hasInquiryIdentity =
+      inquiryIdentity.hasIndustry ||
+      inquiryIdentity.hasProduct ||
+      inquiryIdentity.hasIntention;
     const shouldGuidePipeline = userMessageCount >= 5 && !hasInquiryIdentity;
 
     const currentMessagePipeline = detectPipeline(content);
@@ -1342,7 +1287,8 @@ ${JSON.stringify(ragContext.retrievedContext)}
 `.trim();
 
     if (shouldAskConsent) {
-      const contactType = hasEmail && hasPhone ? "email and phone" : hasEmail ? "email" : "phone";
+      const contactType =
+        hasEmail && hasPhone ? "email and phone" : hasEmail ? "email" : "phone";
       systemMessage += `\n\nIMPORTANT: The user has just provided their ${contactType}. You MUST ask for their consent to be contacted immediately in this response. Do NOT ask any other inquiry questions in this response - ONLY ask for consent. Ask something like "Thank you for sharing your contact. Do you consent to our team contacting you via ${contactType}?"`;
     }
 
@@ -1355,35 +1301,20 @@ ${JSON.stringify(ragContext.retrievedContext)}
     } else if (currentMessagePipeline.intention === "supply") {
       systemMessage += `\n\nSUPPLY INTENT DETECTED: The user wants to supply products to Bahtera. Guide them through the supply inquiry process: collect company info, product offered, principal/manufacturer status, documentation, and target industry.`;
     }
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
     const aiMessages = [
       {
         role: "system",
         content: systemMessage,
       },
-<<<<<<< HEAD
-=======
       {
         role: "system",
-        content: `IMPORTANT: This is message #${userMessageCount + 1} from the user. ${userMessageCount === 0 ? 'This is their FIRST message. Focus on answering their question directly. Do NOT ask for personal information or inquiry details yet. Build rapport first.' : userMessageCount < 3 ? 'The conversation is just starting. Answer their question, then naturally introduce 1-2 relevant follow-up questions.' : 'The conversation is progressing. Continue collecting inquiry information naturally.'}`,
+        content: `IMPORTANT: This is message #${userMessageCount + 1} from the user. ${userMessageCount === 0 ? "This is their FIRST message. Focus on answering their question directly. Do NOT ask for personal information or inquiry details yet. Build rapport first." : userMessageCount < 3 ? "The conversation is just starting. Answer their question, then naturally introduce 1-2 relevant follow-up questions." : "The conversation is progressing. Continue collecting inquiry information naturally."}`,
       },
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       ...chronologicalHistory.map((row) => ({
         role: row.role,
         content: row.content,
       })),
-<<<<<<< HEAD
-      // On an unanswered retry the user message is already the last entry
-      // in chronologicalHistory — don't append it twice.
-      ...(isUnansweredRetry ? [] : [{ role: "user", content }]),
-    ];
-
-    const { completion, assistantContent } =
-      await createChatCompletion(aiMessages);
-
-    await db.query(
-=======
     ];
 
     const aiRequestBody = {
@@ -1396,7 +1327,6 @@ ${JSON.stringify(ragContext.retrievedContext)}
     const assistantContent = completion.choices[0]?.message?.content;
 
     const saveRequest = await db.query(
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       `
         INSERT INTO ai_responses (
           record
@@ -1406,11 +1336,7 @@ ${JSON.stringify(ragContext.retrievedContext)}
       [
         {
           sessionId,
-<<<<<<< HEAD
-          requestBody: { model: process.env.CEREBRAS_MODEL, messages: aiMessages },
-=======
           requestBody: aiRequestBody,
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
           responseBody: completion,
           assistantContent,
         },
@@ -1419,17 +1345,12 @@ ${JSON.stringify(ragContext.retrievedContext)}
 
     if (!assistantContent) {
       return NextResponse.json(
-<<<<<<< HEAD
-        { error: "Assistant response is empty" },
-        { status: 500 },
-=======
         {
           error: "Assistant response is empty",
         },
         {
           status: 500,
         },
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       );
     }
 
@@ -1473,27 +1394,6 @@ ${JSON.stringify(ragContext.retrievedContext)}
     const { recommendations: recommendationData } =
       await recommendations.json();
 
-<<<<<<< HEAD
-    const hasSubmittedContactForm =
-      chronologicalHistory.some(
-        (message) =>
-          message.role === "user" &&
-          message.content.includes("[CHATBOT_CONTACT_FORM_SUBMISSION]"),
-      ) || content.includes("[CHATBOT_CONTACT_FORM_SUBMISSION]");
-
-    const uiAction =
-      state.contactFormAllowed && !hasSubmittedContactForm
-        ? { type: "show_contact_form" }
-        : undefined;
-
-    return NextResponse.json({
-      user_message: userMessageRow,
-      assistant_message: {
-        ...assistantResult.rows[0],
-      },
-      recommendations: recommendationData,
-      ...(uiAction && { ui_action: uiAction }),
-=======
     const isConsentConfirmation = isConsentSeeking(assistantContent);
 
     return NextResponse.json({
@@ -1503,7 +1403,6 @@ ${JSON.stringify(ragContext.retrievedContext)}
         isConsentConfirmation,
       },
       recommendations: recommendationData,
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     });
   } catch (error) {
     console.error("Create chat message error:", error);
@@ -1511,39 +1410,19 @@ ${JSON.stringify(ragContext.retrievedContext)}
     const errorMessage =
       error instanceof Error ? error.message : "Unknown server error";
 
-<<<<<<< HEAD
-    // Surface upstream rate limiting (e.g. Cerebras 429) so the frontend
-    // can show the rate-limit retry UI instead of a generic error.
-    const upstreamStatus = (error as { status?: unknown })?.status;
-    const status = upstreamStatus === 429 ? 429 : 500;
-
-    return NextResponse.json(
-      {
-        error:
-          status === 429
-            ? "AI rate limit exceeded"
-            : "Failed to create chat message",
-=======
     return NextResponse.json(
       {
         error: "Failed to create chat message",
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         detail:
           process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
       {
-<<<<<<< HEAD
-        status,
-=======
         status: 500,
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       },
     );
   }
 }
 
-<<<<<<< HEAD
-=======
 // export async function GET(request: NextRequest) {
 //   try {
 //     const { searchParams } = new URL(request.url);
@@ -1616,7 +1495,6 @@ ${JSON.stringify(ragContext.retrievedContext)}
 //   }
 // }
 
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -1659,18 +1537,11 @@ export async function GET(request: NextRequest) {
     const newestMessages = recentResult.rows;
 
     const recommendationUrl = `${origin}/api/recommendations`;
-<<<<<<< HEAD
-
-    let recommendationData: {
-      recommendation_key?: string;
-      recommendations?: unknown[];
-=======
     console.log(recommendationUrl);
 
     let recommendationData: {
       recommendation_key?: string;
       recommendations?: any[];
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     } = {
       recommendation_key: "start",
       recommendations: [],

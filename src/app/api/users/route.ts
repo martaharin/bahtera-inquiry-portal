@@ -20,15 +20,11 @@ export async function GET() {
       WHERE LOWER(sp.role_name) IN (
         'sales staff',
         'sales',
-<<<<<<< HEAD
-        'product team'
-=======
         'product'
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       )
 
       ORDER BY u.user_name ASC;
-      `
+      `,
     );
 
     return NextResponse.json(result.rows);
@@ -37,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json(
       { error: "Gagal mengambil data user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

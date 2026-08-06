@@ -1,58 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-<<<<<<< HEAD
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import {
-  getPermissionKeysBySessionUser,
-  hasPermission,
-} from "@/lib/permissions";
-
-async function getUserPermissions() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    return {
-      permissions: [],
-      response: NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const permissions = await getPermissionKeysBySessionUser(session.user);
-
-  return {
-    permissions,
-    response: null,
-  };
-}
 
 export async function GET() {
   try {
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.view")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 }
-      );
-    }
-
-=======
-
-export async function GET() {
-  try {
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const result = await db.query(`
       SELECT
         b.branch_id,
@@ -86,30 +36,13 @@ export async function GET() {
     console.error("ERROR FETCH BRANCH INDUSTRY:", error);
     return NextResponse.json(
       { success: false, error: "Gagal mengambil data branch dan industry" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(req: Request) {
   try {
-<<<<<<< HEAD
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.create")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 }
-      );
-    }
-
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const body = await req.json();
     const { action, branch_name, branch_id, industry_name } = body;
 
@@ -117,7 +50,7 @@ export async function POST(req: Request) {
       if (!branch_name || !branch_name.trim()) {
         return NextResponse.json(
           { success: false, error: "Branch name wajib diisi" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -140,7 +73,7 @@ export async function POST(req: Request) {
         SELECT branch_id, branch_name FROM inserted_branch
         LIMIT 1;
         `,
-        [branch_name]
+        [branch_name],
       );
 
       return NextResponse.json({
@@ -153,14 +86,14 @@ export async function POST(req: Request) {
       if (!branch_id) {
         return NextResponse.json(
           { success: false, error: "Branch wajib dipilih" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!industry_name || !industry_name.trim()) {
         return NextResponse.json(
           { success: false, error: "Industry name wajib diisi" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -199,7 +132,7 @@ export async function POST(req: Request) {
         FROM final_industry
         LIMIT 1;
         `,
-        [branch_id, industry_name]
+        [branch_id, industry_name],
       );
 
       return NextResponse.json({
@@ -210,36 +143,19 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { success: false, error: "Action tidak dikenali" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error: any) {
     console.error("ERROR SAVE BRANCH INDUSTRY:", error);
     return NextResponse.json(
       { success: false, error: "Gagal menyimpan data branch dan industry" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(req: Request) {
   try {
-<<<<<<< HEAD
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.delete")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 }
-      );
-    }
-
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const branchId = searchParams.get("branch_id");
@@ -249,7 +165,7 @@ export async function DELETE(req: Request) {
       if (!branchId) {
         return NextResponse.json(
           { success: false, error: "Branch ID wajib diisi" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -258,7 +174,7 @@ export async function DELETE(req: Request) {
         DELETE FROM public.branch
         WHERE branch_id = $1;
         `,
-        [branchId]
+        [branchId],
       );
 
       return NextResponse.json({
@@ -271,7 +187,7 @@ export async function DELETE(req: Request) {
       if (!branchId || !industryId) {
         return NextResponse.json(
           { success: false, error: "Branch ID dan Industry ID wajib diisi" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -281,7 +197,7 @@ export async function DELETE(req: Request) {
         WHERE branch_id = $1
         AND industry_id = $2;
         `,
-        [branchId, industryId]
+        [branchId, industryId],
       );
 
       return NextResponse.json({
@@ -292,13 +208,13 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json(
       { success: false, error: "Type delete tidak dikenali" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error: any) {
     console.error("ERROR DELETE BRANCH INDUSTRY:", error);
     return NextResponse.json(
       { success: false, error: "Gagal menghapus data branch atau industry" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

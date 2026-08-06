@@ -12,59 +12,17 @@ const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
 const SESSION_EXPIRY_HOURS = 8;
 
-<<<<<<< HEAD
-const VALID_INDUSTRIES = [
-  "Personal & Household Care",
-  "Food & Beverages",
-  "Agriculture & Animal Care",
-  "Industrial Solutions",
-  "Healthcare & Hygiene",
-  "Paper, Packaging & Export",
-];
-
-function normalizeIndustry(industry: string | null | undefined): string | null {
-  if (!industry) return null;
-  
-  const lowerIndustry = industry.toLowerCase().trim();
-  
-  // Direct match (case-insensitive)
-  const directMatch = VALID_INDUSTRIES.find(
-    (valid) => valid.toLowerCase() === lowerIndustry
-  );
-  if (directMatch) return directMatch;
-  
-  // Fuzzy match based on keywords
-  const industryKeywords: Record<string, string[]> = {
-    "Personal & Household Care": ["personal", "household", "cosmetic", "skincare", "soap", "shampoo", "detergent", "cleaning"],
-    "Food & Beverages": ["food", "beverage", "f&b", "drink"],
-    "Agriculture & Animal Care": ["agriculture", "animal", "aquaculture", "farm", "livestock", "poultry"],
-    "Industrial Solutions": ["industrial", "coating", "paint", "construction", "automotive", "manufacturing"],
-    "Healthcare & Hygiene": ["healthcare", "hygiene", "medical", "pharma", "pharmaceutical", "hospital"],
-    "Paper, Packaging & Export": ["paper", "packaging", "export", "pulp"],
-  };
-  
-  for (const [validIndustry, keywords] of Object.entries(industryKeywords)) {
-    if (keywords.some((kw) => lowerIndustry.includes(kw))) {
-      return validIndustry;
-    }
-  }
-  
-  // If no match found, return the original value
-  return industry;
-}
-
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const secretKey = body.secret_key || request.headers.get("x-webhook-secret");
+    const secretKey =
+      body.secret_key || request.headers.get("x-webhook-secret");
 
-    if (process.env.WEBHOOK_SECRET && secretKey !== process.env.WEBHOOK_SECRET) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (
+      process.env.WEBHOOK_SECRET &&
+      secretKey !== process.env.WEBHOOK_SECRET
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const expiredSessions = await db.query(
@@ -75,7 +33,7 @@ export async function POST(request: NextRequest) {
         AND (extraction_status IS NULL OR extraction_status = 'pending')
       ORDER BY updated_at ASC
       LIMIT 50
-      `
+      `,
     );
 
     if (expiredSessions.rows.length === 0) {
@@ -97,13 +55,13 @@ export async function POST(request: NextRequest) {
           WHERE session_id = $1
           ORDER BY created_at ASC
           `,
-          [session.id]
+          [session.id],
         );
 
         if (messagesResult.rows.length === 0) {
           await db.query(
             `UPDATE chat_sessions SET extraction_status = 'unqualified' WHERE id = $1`,
-            [session.id]
+            [session.id],
           );
           results.push({
             session_id: session.id,
@@ -118,7 +76,7 @@ export async function POST(request: NextRequest) {
         if (!qualification.qualified) {
           await db.query(
             `UPDATE chat_sessions SET extraction_status = 'unqualified' WHERE id = $1`,
-            [session.id]
+            [session.id],
           );
           results.push({
             session_id: session.id,
@@ -132,7 +90,7 @@ export async function POST(request: NextRequest) {
         const filePath = path.join(
           process.cwd(),
           "public",
-          "inquiry-extraction-rag.txt"
+          "inquiry-extraction-rag.txt",
         );
         const fileContent = await fs.readFile(filePath, "utf-8");
 
@@ -175,65 +133,25 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-<<<<<<< HEAD
-        // Normalize industry to ensure exact match with valid values
-        if (inquiryData.industry) {
-          inquiryData.industry = normalizeIndustry(inquiryData.industry);
-        }
-
-        // Ensure reason_for_inquiry is never empty - generate fallback summary if needed
-        if (!inquiryData.reason_for_inquiry || String(inquiryData.reason_for_inquiry).trim() === "") {
-          const userMessages = messagesResult.rows.filter((row: any) => row.role === "user").map((row: any) => row.content);
-          
-          const summaryParts: string[] = [];
-          
-          if (userMessages.length > 0) {
-            summaryParts.push(`User discussed: ${userMessages.slice(0, 3).join("; ")}`);
-          }
-          
-          if (inquiryData.product_inquiry) {
-            summaryParts.push(`Product inquiry: ${inquiryData.product_inquiry}`);
-          }
-          
-          if (inquiryData.type) {
-            summaryParts.push(`Inquiry type: ${inquiryData.type}`);
-          }
-          
-          if (inquiryData.industry) {
-            summaryParts.push(`Industry: ${inquiryData.industry}`);
-          }
-          
-          inquiryData.reason_for_inquiry = summaryParts.length > 0 
-            ? summaryParts.join(". ") 
-            : "Chat session with no specific inquiry details captured.";
-        }
-
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         function hasValue(value: unknown) {
           return (
-            value !== null &&
-            value !== undefined &&
-            String(value).trim() !== ""
+            value !== null && value !== undefined && String(value).trim() !== ""
           );
         }
 
-<<<<<<< HEAD
-        // All sessions that reach this point are already qualified by the qualification criteria
-        // (3+ messages, has contact info, has intent), so all tickets are complete
-        const ticketStatus = 1;
-=======
         // Determine ticket status based on qualification criteria
         // Status 1 = complete/qualified, Status 4 = incomplete/needs follow-up
-        const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
-        const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
+        const hasContactInfo =
+          hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+        const hasType =
+          hasValue(inquiryData.type) && inquiryData.type !== "other";
         const hasIndustry = hasValue(inquiryData.industry);
         const hasConsent = inquiryData.consent_to_contact === true;
 
         // Complete if has contact info + type + (industry or consent as bonus)
-        const isComplete = hasContactInfo && hasType && (hasIndustry || hasConsent);
+        const isComplete =
+          hasContactInfo && hasType && (hasIndustry || hasConsent);
         const ticketStatus = isComplete ? 1 : 4;
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         const values = [
           session.id,
@@ -300,7 +218,7 @@ export async function POST(request: NextRequest) {
             updated_at = CURRENT_TIMESTAMP
           RETURNING inquiry_id, consent_to_contact
           `,
-          values
+          values,
         );
 
         const inquiryId = insertInquiry.rows[0];
@@ -314,12 +232,12 @@ export async function POST(request: NextRequest) {
               status = EXCLUDED.status
           RETURNING ticket_id, created_at
           `,
-          [inquiryId.inquiry_id, ticketStatus]
+          [inquiryId.inquiry_id, ticketStatus],
         );
 
         await db.query(
           `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
-          [session.id]
+          [session.id],
         );
 
         results.push({
@@ -327,21 +245,23 @@ export async function POST(request: NextRequest) {
           status: "success",
           inquiry_id: inquiryId.inquiry_id,
           ticket_id: ticketResult.rows[0]?.ticket_id,
-<<<<<<< HEAD
-=======
           is_complete: isComplete,
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         });
       } catch (sessionError) {
         console.error(`Error processing session ${session.id}:`, sessionError);
-        await db.query(
-          `UPDATE chat_sessions SET extraction_status = 'error' WHERE id = $1`,
-          [session.id]
-        ).catch(() => {}); // Don't fail if status update fails
+        await db
+          .query(
+            `UPDATE chat_sessions SET extraction_status = 'error' WHERE id = $1`,
+            [session.id],
+          )
+          .catch(() => {}); // Don't fail if status update fails
         results.push({
           session_id: session.id,
           status: "error",
-          reason: sessionError instanceof Error ? sessionError.message : "Unknown error",
+          reason:
+            sessionError instanceof Error
+              ? sessionError.message
+              : "Unknown error",
         });
       }
     }
@@ -349,7 +269,9 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.status === "success").length;
     const errorCount = results.filter((r) => r.status === "error").length;
     const skippedCount = results.filter((r) => r.status === "skipped").length;
-    const unqualifiedCount = results.filter((r) => r.status === "unqualified").length;
+    const unqualifiedCount = results.filter(
+      (r) => r.status === "unqualified",
+    ).length;
 
     return NextResponse.json({
       success: true,
@@ -368,7 +290,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to process session expiry webhook",
         detail: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -383,7 +305,7 @@ export async function GET() {
         AND (extraction_status IS NULL OR extraction_status = 'pending')
       ORDER BY updated_at ASC
       LIMIT 100
-      `
+      `,
     );
 
     return NextResponse.json({
@@ -394,7 +316,7 @@ export async function GET() {
     console.error("Get expired sessions error:", error);
     return NextResponse.json(
       { error: "Failed to get expired sessions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,19 +1,10 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-<<<<<<< HEAD
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { encrypt } from "@/lib/crypto";
-import {
-  getPermissionKeysBySessionUser,
-  hasPermission,
-} from "@/lib/permissions";
-=======
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PermissionUser, canManageUsers } from "@/lib/rbac";
 import { encrypt } from "@/lib/crypto";
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
 export async function POST(request: NextRequest) {
   let transactionStarted = false;
@@ -27,15 +18,10 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Unauthorized",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-<<<<<<< HEAD
-    const userPermissions = await getPermissionKeysBySessionUser(session.user);
-
-    if (!hasPermission(userPermissions, "user.create")) {
-=======
     const currentUser: PermissionUser = {
       user_id: session.user.user_id,
       role_name: session.user.role_name,
@@ -44,13 +30,12 @@ export async function POST(request: NextRequest) {
     };
 
     if (!canManageUsers(currentUser)) {
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       return NextResponse.json(
         {
           success: false,
           message: "Forbidden",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -67,9 +52,7 @@ export async function POST(request: NextRequest) {
       industry,
     } = body;
 
-    const selectedBranch = Array.isArray(branches)
-      ? branches[0]
-      : branch;
+    const selectedBranch = Array.isArray(branches) ? branches[0] : branch;
 
     const selectedIndustry = Array.isArray(industries)
       ? industries[0]
@@ -88,7 +71,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "All fields are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -99,7 +82,7 @@ export async function POST(request: NextRequest) {
       WHERE LOWER(TRIM(user_email)) = LOWER(TRIM($1))
       LIMIT 1
       `,
-      [email]
+      [email],
     );
 
     if (existingUser.rowCount && existingUser.rowCount > 0) {
@@ -108,7 +91,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Email already exists",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -121,7 +104,7 @@ export async function POST(request: NextRequest) {
       WHERE role_id = $1
       LIMIT 1
       `,
-      [selectedRole]
+      [selectedRole],
     );
 
     if (roleResult.rowCount === 0) {
@@ -130,7 +113,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Selected role is not valid",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -151,7 +134,7 @@ export async function POST(request: NextRequest) {
         AND LOWER(TRIM(i.industry_name)) = LOWER(TRIM($2))
       LIMIT 1
       `,
-      [selectedBranch, selectedIndustry]
+      [selectedBranch, selectedIndustry],
     );
 
     if (branchIndustryCheck.rowCount === 0) {
@@ -160,7 +143,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Invalid branch and industry combination",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -181,12 +164,7 @@ export async function POST(request: NextRequest) {
       VALUES ($1, $2, $3, $4)
       RETURNING user_id
       `,
-      [
-        name,
-        email,
-        encryptedPassword,
-        selectedRole,
-      ]
+      [name, email, encryptedPassword, selectedRole],
     );
 
     const newUserId = insertUserResult.rows[0].user_id;
@@ -202,12 +180,7 @@ export async function POST(request: NextRequest) {
       )
       VALUES ($1, $2, $3, $4)
       `,
-      [
-        newUserId,
-        selectedRoleName,
-        selectedIndustry,
-        selectedBranch,
-      ]
+      [newUserId, selectedRoleName, selectedIndustry, selectedBranch],
     );
 
     await db.query("COMMIT");
@@ -229,7 +202,7 @@ export async function POST(request: NextRequest) {
         success: false,
         message: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
