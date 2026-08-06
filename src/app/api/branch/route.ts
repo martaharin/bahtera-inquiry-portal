@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-<<<<<<< HEAD
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { db } from "@/lib/db";
 import {
@@ -10,15 +9,6 @@ import {
 
 export async function GET() {
   try {
-    
-=======
-
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { db } from "@/lib/db";
-
-export async function GET() {
-  try {
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const session = await getServerSession(authOptions);
 
     if (!session) {
@@ -29,11 +19,10 @@ export async function GET() {
         },
         {
           status: 401,
-        }
+        },
       );
     }
 
-<<<<<<< HEAD
     const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
     if (!hasPermission(userPermissions, "branch_industry.view")) {
@@ -44,12 +33,10 @@ export async function GET() {
         },
         {
           status: 403,
-        }
+        },
       );
     }
 
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     const result = await db.query(`
       SELECT
         branch_id,
@@ -62,9 +49,7 @@ export async function GET() {
       success: true,
       branches: result.rows,
     });
-
   } catch (error: any) {
-
     console.error("FETCH BRANCH ERROR:", error);
 
     return NextResponse.json(
@@ -74,7 +59,7 @@ export async function GET() {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

@@ -2,7 +2,10 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getPermissionKeysBySessionUser, hasPermission } from "@/lib/permissions";
+import {
+  getPermissionKeysBySessionUser,
+  hasPermission,
+} from "@/lib/permissions";
 import { updateAnalyticsFromTicket } from "@/lib/analytics/updateAnalyticsFromTicket";
 
 type TicketScopeRow = {
@@ -12,7 +15,9 @@ type TicketScopeRow = {
 };
 
 function normalizeText(value?: string | null) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function canAccessTicketScope(
@@ -20,7 +25,7 @@ function canAccessTicketScope(
   ticket: TicketScopeRow,
   userId?: string | null,
   userIndustry?: string | null,
-  userBranch?: string | null
+  userBranch?: string | null,
 ) {
   if (hasPermission(userPermissions, "ticket.view_all")) {
     return true;
@@ -50,7 +55,7 @@ function canAccessTicketScope(
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> } 
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -58,7 +63,7 @@ export async function GET(
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -71,21 +76,21 @@ export async function GET(
     if (!hasPermission(userPermissions, "ticket.detail.view")) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
-      if (!id) {
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Ticket ID is missing from the request parameters",
+        },
 
-        return NextResponse.json(
-
-          { success: false, error: "Ticket ID is missing from the request parameters" },
-
-          { status: 400 }
-
-        );
-      }
+        { status: 400 },
+      );
+    }
 
     const result = await db.query(
       `
@@ -117,7 +122,7 @@ export async function GET(
       WHERE i.inquiry_id = $1 OR t.ticket_id = $1
       LIMIT 1
       `,
-      [id]
+      [id],
     );
 
     const row = result.rows[0];
@@ -125,7 +130,7 @@ export async function GET(
     if (!row) {
       return NextResponse.json(
         { success: false, error: "Ticket tidak ditemukan" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -135,12 +140,12 @@ export async function GET(
         row,
         userId,
         userIndustry,
-        userBranch
+        userBranch,
       )
     ) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -153,7 +158,7 @@ export async function GET(
         WHERE session_id = $1 
         ORDER BY created_at ASC
         `,
-        [row.session_id]
+        [row.session_id],
       );
       chatMessages = chatResult?.rows || [];
     }
@@ -161,21 +166,20 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: row,
-      chatMessages: chatMessages
+      chatMessages: chatMessages,
     });
-
   } catch (error: any) {
     console.error("DETAIL TICKET ERROR:", error);
     return NextResponse.json(
       { success: false, error: error?.message || "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -183,7 +187,7 @@ export async function PUT(
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -196,19 +200,21 @@ export async function PUT(
     if (!hasPermission(userPermissions, "ticket.detail.edit")) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const canAssignTicket = hasPermission(userPermissions, "ticket.detail.assign");
+    const canAssignTicket = hasPermission(
+      userPermissions,
+      "ticket.detail.assign",
+    );
 
     const { id } = await params;
     const ticketId = id;
-    
+
     const ticketCheck = await db.query(
       `
       SELECT
-<<<<<<< HEAD
         t.inquiry_id,
         t.status,
         t.assigned_user_id,
@@ -218,16 +224,9 @@ export async function PUT(
       LEFT JOIN public.sales_person sp
         ON t.assigned_user_id = sp.user_id
       WHERE t.ticket_id = $1
-=======
-        inquiry_id,
-        status,
-        assigned_user_id
-      FROM public.ticket
-      WHERE ticket_id = $1
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       LIMIT 1
       `,
-      [ticketId]
+      [ticketId],
     );
 
     const existingTicket = ticketCheck.rows[0];
@@ -239,7 +238,7 @@ export async function PUT(
         },
         {
           status: 404,
-        }
+        },
       );
     }
     if (
@@ -248,12 +247,12 @@ export async function PUT(
         existingTicket,
         userId,
         userIndustry,
-        userBranch
+        userBranch,
       )
     ) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -270,14 +269,15 @@ export async function PUT(
     } = body;
 
     // FIXED ERROR INTEGER: Validasi input data status agar tidak mengirim string kosong "" ke PostgreSQL
-    const finalStatus = (status !== undefined && status !== "" && !isNaN(Number(status))) 
-      ? Number(status) 
-      : existingTicket.status;
+    const finalStatus =
+      status !== undefined && status !== "" && !isNaN(Number(status))
+        ? Number(status)
+        : existingTicket.status;
 
     const finalAssignedId = canAssignTicket
-    ? assigned_user_id?.trim() || null
-    : existingTicket.assigned_user_id;
-    
+      ? assigned_user_id?.trim() || null
+      : existingTicket.assigned_user_id;
+
     await db.query(
       `UPDATE public.ticket 
       SET 
@@ -286,7 +286,7 @@ export async function PUT(
       updated_at = NOW()
       WHERE ticket_id = $3
       `,
-      [finalStatus, finalAssignedId, ticketId]
+      [finalStatus, finalAssignedId, ticketId],
     );
 
     await updateAnalyticsFromTicket(ticketId);
@@ -298,33 +298,32 @@ export async function PUT(
       WHERE inquiry_id = $7
       `,
       [
-        name || "", 
-        email || "", 
-        phone || "", 
-        location || "", 
-        company || "", 
-        industry || "", 
-        existingTicket.inquiry_id
-      ]
+        name || "",
+        email || "",
+        phone || "",
+        location || "",
+        company || "",
+        industry || "",
+        existingTicket.inquiry_id,
+      ],
     );
 
     return NextResponse.json({
       success: true,
       message: "Ticket updated successfully",
     });
-
   } catch (error: any) {
     console.error("PUT TICKET ERROR:", error);
     return NextResponse.json(
       { success: false, error: error?.message || "Failed to update ticket" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -337,7 +336,7 @@ export async function PATCH(
         },
         {
           status: 401,
-        }
+        },
       );
     }
 
@@ -350,7 +349,7 @@ export async function PATCH(
     if (!hasPermission(userPermissions, "ticket.detail.convert_erp")) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -359,7 +358,6 @@ export async function PATCH(
 
     const ticketCheck = await db.query(
       `
-<<<<<<< HEAD
       SELECT
         t.assigned_user_id,
         sp.industry AS assigned_industry,
@@ -368,14 +366,9 @@ export async function PATCH(
       LEFT JOIN public.sales_person sp
         ON t.assigned_user_id = sp.user_id
       WHERE t.ticket_id = $1
-=======
-      SELECT assigned_user_id
-      FROM public.ticket
-      WHERE ticket_id = $1
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       LIMIT 1
       `,
-      [ticketId]
+      [ticketId],
     );
 
     const existingTicket = ticketCheck.rows[0];
@@ -388,7 +381,7 @@ export async function PATCH(
         },
         {
           status: 404,
-        }
+        },
       );
     }
 
@@ -398,12 +391,12 @@ export async function PATCH(
         existingTicket,
         userId,
         userIndustry,
-        userBranch
+        userBranch,
       )
     ) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -419,26 +412,29 @@ export async function PATCH(
       WHERE ticket_id = $2
       RETURNING *
       `,
-      [converted_to_erp, ticketId]
+      [converted_to_erp, ticketId],
     );
-      await updateAnalyticsFromTicket(ticketId);
+    await updateAnalyticsFromTicket(ticketId);
 
-    return NextResponse.json({ 
-      success: true, data: result.rows[0] 
+    return NextResponse.json({
+      success: true,
+      data: result.rows[0],
     });
-
   } catch (error: any) {
     console.error("PATCH ERP ERROR:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to update ERP conversion" },
-      { status: 500 }
+      {
+        success: false,
+        error: error?.message || "Failed to update ERP conversion",
+      },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -448,7 +444,7 @@ export async function DELETE(
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -461,7 +457,7 @@ export async function DELETE(
     if (!hasPermission(userPermissions, "ticket.detail.delete")) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -478,12 +474,15 @@ export async function DELETE(
       WHERE t.ticket_id = $1
       LIMIT 1
       `,
-      [ticketId]
+      [ticketId],
     );
 
     const existingTicket = ticketCheck?.rows?.[0];
     if (!existingTicket) {
-      return NextResponse.json({ success: false, error: "Ticket tidak ditemukan" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Ticket tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     if (
@@ -492,28 +491,31 @@ export async function DELETE(
         existingTicket,
         userId,
         userIndustry,
-        userBranch
+        userBranch,
       )
     ) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    await db.query(`DELETE FROM public.ticket WHERE ticket_id = $1`, [ticketId]);
-    await db.query(`DELETE FROM public.inquiry WHERE inquiry_id = $1`, [existingTicket.inquiry_id]);
+    await db.query(`DELETE FROM public.ticket WHERE ticket_id = $1`, [
+      ticketId,
+    ]);
+    await db.query(`DELETE FROM public.inquiry WHERE inquiry_id = $1`, [
+      existingTicket.inquiry_id,
+    ]);
 
     return NextResponse.json({
       success: true,
       message: "Ticket deleted successfully.",
     });
-
   } catch (error: any) {
     console.error("DELETE TICKET ERROR:", error);
     return NextResponse.json(
       { success: false, error: error?.message || "Failed to delete data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

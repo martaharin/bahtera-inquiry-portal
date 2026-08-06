@@ -12,7 +12,6 @@ const client = new Cerebras({
 });
 const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
-<<<<<<< HEAD
 const VALID_INDUSTRIES = [
   "Personal & Household Care",
   "Food & Beverages",
@@ -24,37 +23,65 @@ const VALID_INDUSTRIES = [
 
 function normalizeIndustry(industry: string | null | undefined): string | null {
   if (!industry) return null;
-  
+
   const lowerIndustry = industry.toLowerCase().trim();
-  
+
   // Direct match (case-insensitive)
   const directMatch = VALID_INDUSTRIES.find(
-    (valid) => valid.toLowerCase() === lowerIndustry
+    (valid) => valid.toLowerCase() === lowerIndustry,
   );
   if (directMatch) return directMatch;
-  
+
   // Fuzzy match based on keywords
   const industryKeywords: Record<string, string[]> = {
-    "Personal & Household Care": ["personal", "household", "cosmetic", "skincare", "soap", "shampoo", "detergent", "cleaning"],
+    "Personal & Household Care": [
+      "personal",
+      "household",
+      "cosmetic",
+      "skincare",
+      "soap",
+      "shampoo",
+      "detergent",
+      "cleaning",
+    ],
     "Food & Beverages": ["food", "beverage", "f&b", "drink"],
-    "Agriculture & Animal Care": ["agriculture", "animal", "aquaculture", "farm", "livestock", "poultry"],
-    "Industrial Solutions": ["industrial", "coating", "paint", "construction", "automotive", "manufacturing"],
-    "Healthcare & Hygiene": ["healthcare", "hygiene", "medical", "pharma", "pharmaceutical", "hospital"],
+    "Agriculture & Animal Care": [
+      "agriculture",
+      "animal",
+      "aquaculture",
+      "farm",
+      "livestock",
+      "poultry",
+    ],
+    "Industrial Solutions": [
+      "industrial",
+      "coating",
+      "paint",
+      "construction",
+      "automotive",
+      "manufacturing",
+    ],
+    "Healthcare & Hygiene": [
+      "healthcare",
+      "hygiene",
+      "medical",
+      "pharma",
+      "pharmaceutical",
+      "hospital",
+    ],
     "Paper, Packaging & Export": ["paper", "packaging", "export", "pulp"],
   };
-  
+
   for (const [validIndustry, keywords] of Object.entries(industryKeywords)) {
     if (keywords.some((kw) => lowerIndustry.includes(kw))) {
       return validIndustry;
     }
   }
-  
+
   // If no match found, return the original value
   return industry;
 }
 
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 async function processLeadExtraction(sessionId: string) {
   const result = await db.query(
     `
@@ -92,7 +119,11 @@ async function processLeadExtraction(sessionId: string) {
     };
   }
 
-  const filePath = path.join(process.cwd(), "public", "inquiry-extraction-rag.txt");
+  const filePath = path.join(
+    process.cwd(),
+    "public",
+    "inquiry-extraction-rag.txt",
+  );
   const fileContent = await fs.readFile(filePath, "utf-8");
 
   const aiMessages = [
@@ -134,60 +165,57 @@ async function processLeadExtraction(sessionId: string) {
     };
   }
 
-<<<<<<< HEAD
   // Normalize industry to ensure exact match with valid values
   if (inquiryData.industry) {
     inquiryData.industry = normalizeIndustry(inquiryData.industry);
   }
 
   // Ensure reason_for_inquiry is never empty - generate fallback summary if needed
-  if (!inquiryData.reason_for_inquiry || String(inquiryData.reason_for_inquiry).trim() === "") {
-    const userMessages = result.rows.filter((row: any) => row.role === "user").map((row: any) => row.content);
-    const assistantMessages = result.rows.filter((row: any) => row.role === "assistant").map((row: any) => row.content);
-    
+  if (
+    !inquiryData.reason_for_inquiry ||
+    String(inquiryData.reason_for_inquiry).trim() === ""
+  ) {
+    const userMessages = result.rows
+      .filter((row: any) => row.role === "user")
+      .map((row: any) => row.content);
+    const assistantMessages = result.rows
+      .filter((row: any) => row.role === "assistant")
+      .map((row: any) => row.content);
+
     // Generate a summary from the conversation
     const summaryParts: string[] = [];
-    
+
     if (userMessages.length > 0) {
-      summaryParts.push(`User discussed: ${userMessages.slice(0, 3).join("; ")}`);
+      summaryParts.push(
+        `User discussed: ${userMessages.slice(0, 3).join("; ")}`,
+      );
     }
-    
+
     if (inquiryData.product_inquiry) {
       summaryParts.push(`Product inquiry: ${inquiryData.product_inquiry}`);
     }
-    
+
     if (inquiryData.type) {
       summaryParts.push(`Inquiry type: ${inquiryData.type}`);
     }
-    
+
     if (inquiryData.industry) {
       summaryParts.push(`Industry: ${inquiryData.industry}`);
     }
-    
-    inquiryData.reason_for_inquiry = summaryParts.length > 0 
-      ? summaryParts.join(". ") 
-      : "Chat session with no specific inquiry details captured.";
+
+    inquiryData.reason_for_inquiry =
+      summaryParts.length > 0
+        ? summaryParts.join(". ")
+        : "Chat session with no specific inquiry details captured.";
   }
 
-=======
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
   function hasValue(value: unknown) {
     return value !== null && value !== undefined && String(value).trim() !== "";
   }
 
-<<<<<<< HEAD
   // All sessions that reach this point are already qualified by the qualification criteria
   // (3+ messages, has contact info, has intent), so all tickets are complete
   const ticketStatus = 1;
-=======
-  const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
-  const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
-  const hasIndustry = hasValue(inquiryData.industry);
-  const hasConsent = inquiryData.consent_to_contact === true;
-
-  const isComplete = hasContactInfo && hasType && (hasIndustry || hasConsent);
-  const ticketStatus = isComplete ? 1 : 4;
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
   const values = [
     sessionId,
@@ -273,21 +301,16 @@ async function processLeadExtraction(sessionId: string) {
 
   await generateInsight();
 
-
   await db.query(
     `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
     [sessionId],
-);
+  );
 
   return {
     success: true,
     message: "Inquiry saved successfully",
     inquiry: inquiryData,
     ticket: ticketResult.rows[0],
-<<<<<<< HEAD
-=======
-    is_complete: isComplete,
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
   };
 }
 

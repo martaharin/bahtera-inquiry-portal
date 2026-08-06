@@ -879,23 +879,6 @@ ${JSON.stringify(ragContext.retrievedContext)}
     //   assistantContent,
     // });
 
-    const saveRequest = await db.query(
-      `
-        INSERT INTO ai_responses (
-          record
-        )
-        VALUES ($1)
-        `,
-      [
-        {
-          sessionId,
-          requestBody: aiRequestBody,
-          responseBody: completion,
-          assistantContent,
-        },
-      ],
-    );
-
     if (!assistantContent) {
       return NextResponse.json(
         {

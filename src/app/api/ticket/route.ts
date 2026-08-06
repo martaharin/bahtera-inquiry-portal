@@ -1,12 +1,14 @@
-import { getServerSession } from "next-auth"
-import { NextResponse } from "next/server";;
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getPermissionKeysBySessionUser, hasPermission } from "@/lib/permissions";
+import {
+  getPermissionKeysBySessionUser,
+  hasPermission,
+} from "@/lib/permissions";
 
 export async function GET(req: Request) {
   try {
-
     // GET SESSION
     const session = await getServerSession(authOptions);
 
@@ -18,7 +20,7 @@ export async function GET(req: Request) {
         },
         {
           status: 401,
-        }
+        },
       );
     }
 
@@ -31,7 +33,10 @@ export async function GET(req: Request) {
     const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
     const canViewAllTickets = hasPermission(userPermissions, "ticket.view_all");
-    const canViewTeamTickets = hasPermission(userPermissions, "ticket.view_team");
+    const canViewTeamTickets = hasPermission(
+      userPermissions,
+      "ticket.view_team",
+    );
     const canViewOwnTickets = hasPermission(userPermissions, "ticket.view_own");
 
     if (!canViewAllTickets && !canViewTeamTickets && !canViewOwnTickets) {
@@ -42,11 +47,9 @@ export async function GET(req: Request) {
         },
         {
           status: 403,
-        }
+        },
       );
     }
-
-    
 
     // FILTER PARAMS
     const { searchParams } = new URL(req.url);
@@ -59,7 +62,7 @@ export async function GET(req: Request) {
     const endDate = searchParams.get("end_date");
 
     console.log(
-      `[TICKET API] User: ${userId}, Role: ${roleName}, Industry: ${industry}, Branch: ${branch}`
+      `[TICKET API] User: ${userId}, Role: ${roleName}, Industry: ${industry}, Branch: ${branch}`,
     );
 
     // ====================================================
@@ -142,7 +145,7 @@ export async function GET(req: Request) {
           },
           {
             status: 403,
-          }
+          },
         );
       }
     }
@@ -164,9 +167,7 @@ export async function GET(req: Request) {
     // ====================================================
 
     if (status === "all") {
-      
-    }
-    else if (status !== null && status !== "") {
+    } else if (status !== null && status !== "") {
       ticketQueryParams.push(Number(status));
 
       conditions.push(`
@@ -267,7 +268,12 @@ export async function GET(req: Request) {
 
     // SALES STAFF
     // VIEW OWN
-    if (!canViewAllTickets && !canViewTeamTickets && canViewOwnTickets && userId) {
+    if (
+      !canViewAllTickets &&
+      !canViewTeamTickets &&
+      canViewOwnTickets &&
+      userId
+    ) {
       statsQuery = `
         SELECT
           u.user_id,
@@ -309,14 +315,10 @@ export async function GET(req: Request) {
 
         WHERE LOWER(sp.industry) = LOWER($1)
         AND LOWER(sp.branch) = LOWER($2)
-<<<<<<< HEAD
         AND LOWER(sp.role_name) IN (
             'sales staff',
             'product team'
         )
-=======
-        AND LOWER(sp.role_name) = 'sales staff'
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 
@@ -344,14 +346,10 @@ export async function GET(req: Request) {
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
 
-<<<<<<< HEAD
         WHERE LOWER(sp.role_name) IN (
             'sales staff',
             'product team'
         )
-=======
-        WHERE LOWER(sp.role_name) = 'sales staff'
->>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 
@@ -397,7 +395,7 @@ export async function GET(req: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
@@ -416,7 +414,7 @@ export async function POST(req: Request) {
         },
         {
           status: 401,
-        }
+        },
       );
     }
 
@@ -434,7 +432,7 @@ export async function POST(req: Request) {
         },
         {
           status: 403,
-        }
+        },
       );
     }
 
@@ -462,7 +460,7 @@ export async function POST(req: Request) {
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -474,7 +472,7 @@ export async function POST(req: Request) {
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -513,7 +511,7 @@ export async function POST(req: Request) {
         reason || null,
         Boolean(consent),
         type,
-      ]
+      ],
     );
 
     const inquiryId = inquiryResult.rows[0].inquiry_id;
@@ -538,12 +536,7 @@ export async function POST(req: Request) {
       ON CONFLICT ON CONSTRAINT ticket_inquiry_id_unique
       DO NOTHING
       `,
-      [
-        inquiryId,
-        1,
-        assignedUserId,
-        false,
-      ]
+      [inquiryId, 1, assignedUserId, false],
     );
 
     await db.query("COMMIT");
@@ -568,7 +561,7 @@ export async function POST(req: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
