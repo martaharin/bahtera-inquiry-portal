@@ -392,9 +392,11 @@ export default function DetailTicketPage({
     const userRole = normalizeText(user.role_name);
 
     const sameBranch =
+      normalizeText(user.branch) === "all" ||
       normalizeText(user.branch) === normalizeText(assignBranch);
 
     const sameIndustry =
+      normalizeText(user.industry) === "all" ||
       normalizeText(user.industry) === normalizeText(assignIndustry);
 
     if (isLeadTicket) {
