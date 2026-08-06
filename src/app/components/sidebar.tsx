@@ -17,6 +17,8 @@ export default function Sidebar() {
 
   const isAdmin = role === "admin";
 
+  // DETEKSI ROUTE AKTIF
+  const isDashboardActive = pathname === "/admin/dashboard";
   const isTicketsActive = pathname === "/admin/ticket";
   const isReportActive = pathname === "/admin/report";
   const isProfileActive = pathname === "/admin/profile";
@@ -53,6 +55,20 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">
+        {/* MENU DASHBOARD (BARU) */}
+        <Link href="/admin/dashboard">
+          <div
+            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+              isDashboardActive
+                ? "bg-orange-50 text-orange-500 border border-orange-100"
+                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Dashboard
+          </div>
+        </Link>
+
+        {/* MENU TICKETS */}
         <Link href="/admin/ticket">
           <div
             className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
@@ -65,6 +81,7 @@ export default function Sidebar() {
           </div>
         </Link>
 
+        {/* MENU REPORT */}
         <Link href="/admin/report">
           <div
             className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
@@ -77,6 +94,7 @@ export default function Sidebar() {
           </div>
         </Link>
 
+        {/* MENU USER MANAGEMENT (ADMIN ONLY) */}
         {isAdmin && (
           <div className="space-y-2">
             <Link href="/admin/user-management">
@@ -101,7 +119,7 @@ export default function Sidebar() {
                         : "text-gray-400 hover:bg-orange-50 hover:text-orange-500"
                     }`}
                   >
-                    Branch & Industry
+                    Branch &amp; Industry
                   </div>
                 </Link>
               </div>
@@ -109,6 +127,7 @@ export default function Sidebar() {
           </div>
         )}
 
+        {/* MENU PROFILE */}
         <Link href="/admin/profile">
           <div
             className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
@@ -122,6 +141,7 @@ export default function Sidebar() {
         </Link>
       </nav>
 
+      {/* FOOTER LOGOUT */}
       <div className="p-8 border-t border-gray-50">
         <div
           onClick={handleLogout}

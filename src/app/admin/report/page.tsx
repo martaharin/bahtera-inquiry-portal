@@ -70,20 +70,6 @@ export default function AIReportPage() {
   return (
     <div className="max-w-7xl mx-auto p-4 bg-white min-h-screen" style={{ fontFamily: "Arial, sans-serif" }}>
       
-      {/* HEADER CONTROL */}
-      <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl print:hidden shadow-sm">
-        <div>
-          <h2 className="text-sm font-bold text-gray-700">AI Intelligence Executive Report Center (100% PostgreSQL Connected)</h2>
-          <p className="text-xs text-gray-500">Laporan analitis prediksi pasar &amp; ekstraksi entitas produk NLP. Siap diexport ke PDF A4.</p>
-        </div>
-        <button
-          onClick={() => window.print()}
-          className="px-4 py-2 bg-[#343694] text-white hover:bg-opacity-95 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
-        >
-          🖨️ GENERATE AI REPORT (PDF)
-        </button>
-      </div>
-
       {/* TABS CONTROLS */}
       <div className="flex border-b border-gray-200 mb-6 print:hidden">
         {(["MARKET FORECASTING", "SALES ROUTING"] as TabType[]).map((tab) => (
