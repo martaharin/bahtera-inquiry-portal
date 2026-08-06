@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 
 interface CombinedDashboardData {
   managerView: {
-    forecastChart: any[];
+    forecastChart: { business_unit: string; points: number[]; labels?: string[] }[];
     totalTickets: number;
     totalLeads: number;
     leadConversionRate: number;
@@ -30,9 +30,15 @@ export default function AIDashboardPage() {
   const isManagerOrAdmin = userRole.includes("admin") || userRole.includes("manager") || userRole.includes("marcomm");
   const userName = session?.user?.name ?? "User";
 
+  // Tanggal saat ini
+  const currentDate = new Date();
+  const currentMonthNum = currentDate.getMonth() + 1; // 1 - 12
+
   const [dbData, setDbData] = useState<CombinedDashboardData | null>(null);
   const [timeFrame, setTimeFrame] = useState<"monthly" | "yearly">("yearly");
-  const [selectedMonth, setSelectedMonth] = useState<string>("7"); // Default Juli
+  
+  // Set default bulan aktif secara dinamis ke bulan saat ini
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthNum.toString());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchProcessedData = useCallback(async () => {
@@ -73,26 +79,51 @@ export default function AIDashboardPage() {
     { name: "Personal & Household Care", color: "#06B6D4" }
   ];
 
+  const monthNames = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+
+  // Opsi dropdown bulan dinamis (memberikan tanda Active pada bulan berjalan)
   const months = [
     { value: "all", label: "Semua Bulan (Full Year)" },
-    { value: "1", label: "Januari" },
-    { value: "2", label: "Februari" },
-    { value: "3", label: "Maret" },
-    { value: "4", label: "April" },
-    { value: "5", label: "Mei" },
-    { value: "6", label: "Juni" },
-    { value: "7", label: "Juli 2026 (Active)" },
-    { value: "8", label: "Agustus" },
-    { value: "9", label: "September" },
-    { value: "10", label: "Oktober" },
-    { value: "11", label: "November" },
-    { value: "12", label: "Desember" },
+    ...monthNames.map((name, idx) => {
+      const mNum = idx + 1;
+      const isActive = mNum === currentMonthNum;
+      return {
+        value: mNum.toString(),
+        label: `${name} ${currentDate.getFullYear()}${isActive ? " (Active)" : ""}`
+      };
+    })
   ];
+
+  // Dapatkan label tanggal aktual dari data database untuk Monthly View
+  const firstChartData = dbData.managerView.forecastChart[0];
+  const dynamicMonthlyLabels = firstChartData?.labels && firstChartData.labels.length > 0
+    ? firstChartData.labels
+    : ["Tgl 01", "Tgl 08", "Tgl 15", "Tgl 22", "Tgl 28"];
+
+  // LOGIKA DINAMIS SUMBU X UNTUK YEARLY VIEW (Bulan -2, Bulan -1, Bulan Aktual, Bulan +1, Bulan +2)
+  const selectedMonthInt = parseInt(selectedMonth, 10);
+  const validMonthInt = (!isNaN(selectedMonthInt) && selectedMonthInt >= 1 && selectedMonthInt <= 12)
+    ? selectedMonthInt
+    : currentMonthNum;
+
+  const getMonthName = (mIndex: number) => {
+    const normalized = ((mIndex - 1) % 12 + 12) % 12;
+    return monthNames[normalized];
+  };
+
+  const prev2MonthName = getMonthName(validMonthInt - 2);
+  const prev1MonthName = getMonthName(validMonthInt - 1);
+  const activeMonthName = getMonthName(validMonthInt);
+  const next1MonthName = getMonthName(validMonthInt + 1);
+  const next2MonthName = getMonthName(validMonthInt + 2);
 
   return (
     <div className="space-y-6 pb-8" style={{ fontFamily: "Arial, sans-serif" }}>
       
-      {/* HEADER BAR CLEAN — TANPA VERBOSE STATUS FILTER */}
+      {/* HEADER BAR CLEAN */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <h1 className="text-lg font-bold uppercase tracking-wider text-[#343694]">
@@ -100,7 +131,7 @@ export default function AIDashboardPage() {
           </h1>
         </div>
 
-        {/* KONTROL UI SEJAJAR RIGID & SIMETRIS */}
+        {/* KONTROL UI */}
         <div className="flex items-center gap-2.5 shrink-0 self-stretch xl:self-auto justify-end">
           {isManagerOrAdmin && (
             <div className="inline-flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-100 p-1 h-10">
@@ -186,10 +217,13 @@ export default function AIDashboardPage() {
                     const pts = chartData.points || [2, 4, 6, 8, 10];
                     
                     if (timeFrame === "monthly") {
-                      const xCoords = [50, 350, 650, 950];
+                      const count = pts.length;
+                      const xCoords = pts.map((_, pIdx) => 40 + (pIdx * (920 / Math.max(count - 1, 1))));
                       const yCoords = pts.map((p: number) => Math.max(200 - (p * 9), 20));
 
-                      const pathD = `M ${xCoords[0]} ${yCoords[0]} L ${xCoords[1]} ${yCoords[1]} L ${xCoords[2]} ${yCoords[2]} L ${xCoords[3]} ${yCoords[3]}`;
+                      const pathD = pts.reduce((acc: string, _, pIdx: number) => {
+                        return `${acc} ${pIdx === 0 ? "M" : "L"} ${xCoords[pIdx]} ${yCoords[pIdx]}`;
+                      }, "");
 
                       return (
                         <g key={idx}>
@@ -219,22 +253,23 @@ export default function AIDashboardPage() {
                   })}
                 </svg>
 
+                {/* SUMBU X DINAMIS (MEMBACA NAMA BULAN SECARA PRESISI) */}
                 <div className="w-full flex justify-between text-[10px] font-bold pt-2 text-gray-500">
                   {timeFrame === "monthly" ? (
-                    <>
-                      <span>Tanggal 01</span>
-                      <span>Tanggal 07</span>
-                      <span>Tanggal 14</span>
-                      <span>Tanggal 21</span>
-                      <span className="text-[#343694]">Tanggal 28 (Akhir Bulan)</span>
-                    </>
+                    dynamicMonthlyLabels.map((label, lIdx) => (
+                      <span key={lIdx} className={lIdx === dynamicMonthlyLabels.length - 1 ? "text-[#343694]" : ""}>
+                        {label}
+                      </span>
+                    ))
                   ) : (
                     <>
-                      <span>Maret 2026</span>
-                      <span>Mei 2026</span>
-                      <span className="text-[#343694] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Juli (Aktual)</span>
-                      <span className="text-[#81C040]">Agustus (Forecast)</span>
-                      <span className="text-[#81C040]">Oktober (Forecast Q3)</span>
+                      <span>{prev2MonthName} 2026</span>
+                      <span>{prev1MonthName} 2026</span>
+                      <span className="text-[#343694] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                        {activeMonthName} (Aktual)
+                      </span>
+                      <span className="text-[#81C040]">{next1MonthName} (Forecast)</span>
+                      <span className="text-[#81C040]">{next2MonthName} (Forecast Q3)</span>
                     </>
                   )}
                 </div>
