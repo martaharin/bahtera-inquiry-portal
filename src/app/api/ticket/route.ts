@@ -309,10 +309,14 @@ export async function GET(req: Request) {
 
         WHERE LOWER(sp.industry) = LOWER($1)
         AND LOWER(sp.branch) = LOWER($2)
+<<<<<<< HEAD
         AND LOWER(sp.role_name) IN (
             'sales staff',
             'product team'
         )
+=======
+        AND LOWER(sp.role_name) = 'sales staff'
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 
@@ -340,10 +344,14 @@ export async function GET(req: Request) {
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
 
+<<<<<<< HEAD
         WHERE LOWER(sp.role_name) IN (
             'sales staff',
             'product team'
         )
+=======
+        WHERE LOWER(sp.role_name) = 'sales staff'
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+<<<<<<< HEAD
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -48,6 +49,15 @@ export async function GET() {
         ON r.role_id = rp.role_id
       GROUP BY r.role_id, r.role_name
       ORDER BY r.role_name ASC
+=======
+
+export async function GET() {
+  try {
+    const result = await db.query(`
+      SELECT role_id, role_name
+      FROM role
+      ORDER BY role_id ASC
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     `);
 
     return NextResponse.json({
@@ -60,6 +70,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
+<<<<<<< HEAD
         error: error?.message || "Failed to get roles",
       },
       {
@@ -169,6 +180,11 @@ export async function POST(req: Request) {
       {
         status: 500,
       }
+=======
+        message: error.message,
+      },
+      { status: 500 }
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     );
   }
 }

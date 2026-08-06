@@ -1,12 +1,19 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+<<<<<<< HEAD
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { encrypt } from "@/lib/crypto";
 import {
   getPermissionKeysBySessionUser,
   hasPermission,
 } from "@/lib/permissions";
+=======
+
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PermissionUser, canManageUsers } from "@/lib/rbac";
+import { encrypt } from "@/lib/crypto";
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
 export async function POST(request: NextRequest) {
   let transactionStarted = false;
@@ -24,9 +31,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
     const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
     if (!hasPermission(userPermissions, "user.create")) {
+=======
+    const currentUser: PermissionUser = {
+      user_id: session.user.user_id,
+      role_name: session.user.role_name,
+      industry: session.user.industry,
+      branch: session.user.branch,
+    };
+
+    if (!canManageUsers(currentUser)) {
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       return NextResponse.json(
         {
           success: false,

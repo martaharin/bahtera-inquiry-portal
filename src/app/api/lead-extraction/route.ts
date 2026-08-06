@@ -12,6 +12,7 @@ const client = new Cerebras({
 });
 const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
+<<<<<<< HEAD
 const VALID_INDUSTRIES = [
   "Personal & Household Care",
   "Food & Beverages",
@@ -52,6 +53,8 @@ function normalizeIndustry(industry: string | null | undefined): string | null {
   return industry;
 }
 
+=======
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 async function processLeadExtraction(sessionId: string) {
   const result = await db.query(
     `
@@ -131,6 +134,7 @@ async function processLeadExtraction(sessionId: string) {
     };
   }
 
+<<<<<<< HEAD
   // Normalize industry to ensure exact match with valid values
   if (inquiryData.industry) {
     inquiryData.industry = normalizeIndustry(inquiryData.industry);
@@ -165,13 +169,25 @@ async function processLeadExtraction(sessionId: string) {
       : "Chat session with no specific inquiry details captured.";
   }
 
+=======
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
   function hasValue(value: unknown) {
     return value !== null && value !== undefined && String(value).trim() !== "";
   }
 
+<<<<<<< HEAD
   // All sessions that reach this point are already qualified by the qualification criteria
   // (3+ messages, has contact info, has intent), so all tickets are complete
   const ticketStatus = 1;
+=======
+  const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+  const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
+  const hasIndustry = hasValue(inquiryData.industry);
+  const hasConsent = inquiryData.consent_to_contact === true;
+
+  const isComplete = hasContactInfo && hasType && (hasIndustry || hasConsent);
+  const ticketStatus = isComplete ? 1 : 4;
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
   const values = [
     sessionId,
@@ -268,6 +284,10 @@ async function processLeadExtraction(sessionId: string) {
     message: "Inquiry saved successfully",
     inquiry: inquiryData,
     ticket: ticketResult.rows[0],
+<<<<<<< HEAD
+=======
+    is_complete: isComplete,
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
   };
 }
 

@@ -12,6 +12,7 @@ const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
 const SESSION_EXPIRY_HOURS = 8;
 
+<<<<<<< HEAD
 const VALID_INDUSTRIES = [
   "Personal & Household Care",
   "Food & Beverages",
@@ -52,6 +53,8 @@ function normalizeIndustry(industry: string | null | undefined): string | null {
   return industry;
 }
 
+=======
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -172,6 +175,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+<<<<<<< HEAD
         // Normalize industry to ensure exact match with valid values
         if (inquiryData.industry) {
           inquiryData.industry = normalizeIndustry(inquiryData.industry);
@@ -204,6 +208,8 @@ export async function POST(request: NextRequest) {
             : "Chat session with no specific inquiry details captured.";
         }
 
+=======
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         function hasValue(value: unknown) {
           return (
             value !== null &&
@@ -212,9 +218,22 @@ export async function POST(request: NextRequest) {
           );
         }
 
+<<<<<<< HEAD
         // All sessions that reach this point are already qualified by the qualification criteria
         // (3+ messages, has contact info, has intent), so all tickets are complete
         const ticketStatus = 1;
+=======
+        // Determine ticket status based on qualification criteria
+        // Status 1 = complete/qualified, Status 4 = incomplete/needs follow-up
+        const hasContactInfo = hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+        const hasType = hasValue(inquiryData.type) && inquiryData.type !== "other";
+        const hasIndustry = hasValue(inquiryData.industry);
+        const hasConsent = inquiryData.consent_to_contact === true;
+
+        // Complete if has contact info + type + (industry or consent as bonus)
+        const isComplete = hasContactInfo && hasType && (hasIndustry || hasConsent);
+        const ticketStatus = isComplete ? 1 : 4;
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         const values = [
           session.id,
@@ -308,6 +327,10 @@ export async function POST(request: NextRequest) {
           status: "success",
           inquiry_id: inquiryId.inquiry_id,
           ticket_id: ticketResult.rows[0]?.ticket_id,
+<<<<<<< HEAD
+=======
+          is_complete: isComplete,
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         });
       } catch (sessionError) {
         console.error(`Error processing session ${session.id}:`, sessionError);
