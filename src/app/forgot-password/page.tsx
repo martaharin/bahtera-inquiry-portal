@@ -15,7 +15,13 @@ export default function ForgotPasswordPage() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+<<<<<<< HEAD
   const handleResetPassword = async (e: React.FormEvent) => {
+=======
+  const handleResetPassword = async (
+    e: React.FormEvent
+  ) => {
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     e.preventDefault();
 
     setIsLoading(true);
@@ -29,6 +35,7 @@ export default function ForgotPasswordPage() {
     }
 
     try {
+<<<<<<< HEAD
       const response = await fetch("/api/forgot-password", {
         method: "POST",
         headers: {
@@ -39,6 +46,21 @@ export default function ForgotPasswordPage() {
           newPassword,
         }),
       });
+=======
+      const response = await fetch(
+        "/api/forgot-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            newPassword,
+          }),
+        }
+      );
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
       const data = await response.json();
 
@@ -61,6 +83,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb] p-6">
       <div className="w-full max-w-[450px] bg-white rounded-[40px] shadow-sm border border-gray-100 p-10 space-y-8">
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
         {/* HEADER */}
         <div className="text-center space-y-2">
           <h2 className="text-xl font-black text-gray-900 uppercase">
@@ -72,7 +98,15 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
+<<<<<<< HEAD
         <form onSubmit={handleResetPassword} className="space-y-5">
+=======
+        <form
+          onSubmit={handleResetPassword}
+          className="space-y-5"
+        >
+
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
           {/* EMAIL */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest">
@@ -83,8 +117,15 @@ export default function ForgotPasswordPage() {
               type="email"
               required
               value={email}
+<<<<<<< HEAD
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@company.com"
+=======
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              placeholder="admin@bahtera.com"
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
               className="w-full p-4 bg-gray-50 rounded-2xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none"
             />
           </div>
@@ -99,7 +140,13 @@ export default function ForgotPasswordPage() {
               type="password"
               required
               value={newPassword}
+<<<<<<< HEAD
               onChange={(e) => setNewPassword(e.target.value)}
+=======
+              onChange={(e) =>
+                setNewPassword(e.target.value)
+              }
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
               placeholder="Enter new password"
               className="w-full p-4 bg-gray-50 rounded-2xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none"
             />
@@ -115,7 +162,13 @@ export default function ForgotPasswordPage() {
               type="password"
               required
               value={confirmPassword}
+<<<<<<< HEAD
               onChange={(e) => setConfirmPassword(e.target.value)}
+=======
+              onChange={(e) =>
+                setConfirmPassword(e.target.value)
+              }
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
               placeholder="Confirm new password"
               className="w-full p-4 bg-gray-50 rounded-2xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none"
             />
@@ -144,10 +197,21 @@ export default function ForgotPasswordPage() {
             type="submit"
             disabled={isLoading}
             className={`w-full py-4 bg-[#ff8a00] text-white rounded-2xl font-black text-sm shadow-lg shadow-orange-100 hover:bg-[#e67e00] transition-all ${
+<<<<<<< HEAD
               isLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             {isLoading ? "UPDATING..." : "UPDATE PASSWORD"}
+=======
+              isLoading
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
+          >
+            {isLoading
+              ? "UPDATING..."
+              : "UPDATE PASSWORD"}
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
           </button>
 
           {/* BACK */}
@@ -162,4 +226,8 @@ export default function ForgotPasswordPage() {
       </div>
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e

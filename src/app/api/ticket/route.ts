@@ -163,14 +163,16 @@ export async function GET(req: Request) {
     // FILTER: STATUS
     // ====================================================
 
-    if (convertedToErp !== null && convertedToErp !== "") {
-      ticketQueryParams.push(convertedToErp === "true");
+    if (status === "all") {
+      
+    }
+    else if (status !== null && status !== "") {
+      ticketQueryParams.push(Number(status));
 
       conditions.push(`
-        t.converted_to_erp = $${ticketQueryParams.length}
+        t.status = $${ticketQueryParams.length}
       `);
     }
-
     // FILTER: CONVERTED TO ERP
     if (convertedToErp !== null && convertedToErp !== "") {
       ticketQueryParams.push(convertedToErp === "true");
@@ -307,7 +309,14 @@ export async function GET(req: Request) {
 
         WHERE LOWER(sp.industry) = LOWER($1)
         AND LOWER(sp.branch) = LOWER($2)
+<<<<<<< HEAD
+        AND LOWER(sp.role_name) IN (
+            'sales staff',
+            'product team'
+        )
+=======
         AND LOWER(sp.role_name) = 'sales staff'
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 
@@ -335,7 +344,14 @@ export async function GET(req: Request) {
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
 
+<<<<<<< HEAD
+        WHERE LOWER(sp.role_name) IN (
+            'sales staff',
+            'product team'
+        )
+=======
         WHERE LOWER(sp.role_name) = 'sales staff'
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
         GROUP BY u.user_id, u.user_name
 
@@ -403,6 +419,10 @@ export async function POST(req: Request) {
         }
       );
     }
+
+    const userId = session.user.user_id;
+    const roleName = session.user.role_name;
+    const cleanRole = roleName?.toLowerCase().trim();
 
     const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
@@ -498,7 +518,11 @@ export async function POST(req: Request) {
 
     const inquiryId = inquiryResult.rows[0].inquiry_id;
 
-    const assignedUserId = null;
+    const autoAssignRoles = ["sales staff", "product team"];
+
+    const assignedUserId = autoAssignRoles.includes(cleanRole || "")
+      ? userId
+      : null;
 
     await db.query(
       `

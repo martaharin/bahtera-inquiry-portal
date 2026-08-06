@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-
 import { db } from "@/lib/db";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PermissionUser, canManageUsers } from "@/lib/rbac";
+import {
+  getPermissionKeysBySessionUser,
+  hasPermission,
+} from "@/lib/permissions";
 
 // ==========================================
 // GET USER DETAIL
@@ -25,14 +27,9 @@ export async function GET(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
-    if (!canManageUsers(currentUser)) {
+    if (!hasPermission(userPermissions, "user.view")) {
       return NextResponse.json(
         {
           success: false,
@@ -123,14 +120,9 @@ export async function PUT(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
-    if (!canManageUsers(currentUser)) {
+    if (!hasPermission(userPermissions, "user.edit")) {
       return NextResponse.json(
         {
           success: false,
@@ -327,14 +319,9 @@ export async function DELETE(
       );
     }
 
-    const currentUser: PermissionUser = {
-      user_id: session.user.user_id,
-      role_name: session.user.role_name,
-      industry: session.user.industry,
-      branch: session.user.branch,
-    };
+    const userPermissions = await getPermissionKeysBySessionUser(session.user);
 
-    if (!canManageUsers(currentUser)) {
+    if (!hasPermission(userPermissions, "user.delete")) {
       return NextResponse.json(
         {
           success: false,

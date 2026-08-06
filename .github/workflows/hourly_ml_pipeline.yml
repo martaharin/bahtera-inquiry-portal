@@ -1,0 +1,36 @@
+name: Hourly Automated ML & NLP Pipeline Execution
+
+on:
+  schedule:
+    # Menjalankan script secara otomatis setiap jam (pada menit ke-0)
+    - cron: '0 * * * *'
+  # Memungkinkan eksekusi manual via tombol "Run workflow" di GitHub tab Actions
+  workflow_dispatch:
+
+jobs:
+  run-ml-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy psycopg2-binary sqlalchemy
+
+      - name: Execute Master ML Script
+        env:
+          DB_HOST: "54.179.201.252"
+          DB_NAME: "postgres"
+          DB_USER: "postgres"
+          DB_PASSWORD: "Dpb5eVJB3cx$@p%R9n7H"
+          DB_PORT: "5432"
+        run: |
+          python scripts/run_all_pipelines.py

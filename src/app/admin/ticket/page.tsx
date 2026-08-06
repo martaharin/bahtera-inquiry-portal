@@ -156,7 +156,13 @@ export default function TicketPage() {
       };
     }
 
-    if (!canViewAllTickets && !canViewTeamTickets && canViewOwnTickets) {
+    const defaultNewStatusRoles = [
+      "marcomm staff",
+      "sales staff",
+      "product team",
+    ];
+
+    if (defaultNewStatusRoles.includes(roleName.toLowerCase())) {
       defaultFilters = {
         ...defaultFilters,
         status: "1",
@@ -298,7 +304,7 @@ export default function TicketPage() {
               <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-500">
-                    Sales Staff
+                    Staff Name
                   </th>
 
                   <th className="px-3 py-1.5 text-center text-xs font-semibold uppercase text-gray-500">
@@ -411,7 +417,7 @@ export default function TicketPage() {
               }
               className="h-9 min-w-[115px] px-2.5 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-700 outline-none focus:ring-1 focus:ring-orange-200"
             >
-              <option value="">All Status</option>
+              <option value="all">All Status</option>
               <option value="1">New</option>
               <option value="2">In Progress</option>
               <option value="3">Closed</option>

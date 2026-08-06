@@ -4,12 +4,17 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+<<<<<<< HEAD
 import { signOut } from "next-auth/react";
 import { usePermissions } from "@/hooks/usePermissions";
+=======
+import { useSession, signOut } from "next-auth/react";
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
 
 export default function Sidebar() {
   const pathname = usePathname();
 
+<<<<<<< HEAD
   const { loading, hasPermission, hasAnyPermission } = usePermissions();
 
   const canViewTickets = hasAnyPermission([
@@ -35,12 +40,25 @@ export default function Sidebar() {
   const canViewUserManagementGroup =
     canViewUserManagement || canViewBranchIndustry ;
 
+=======
+  const { data: session } = useSession();
+
+  const role = String((session?.user as any)?.role_name || "")
+    .toLowerCase()
+    .trim();
+
+  const isAdmin = role === "admin";
+
+  // DETEKSI ROUTE AKTIF
+  const isDashboardActive = pathname === "/admin/dashboard";
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
   const isTicketsActive = pathname === "/admin/ticket";
   const isReportActive = pathname === "/admin/report";
   const isProfileActive = pathname === "/admin/profile";
 
   const isUserManagementActive =
     pathname === "/admin/user-management" ||
+<<<<<<< HEAD
     pathname === "/admin/branch-industry" ;
 
   const isBranchIndustryActive = pathname === "/admin/branch-industry";
@@ -54,6 +72,15 @@ export default function Sidebar() {
   const handleLogout = async () => {
     const confirmLogout = window.confirm(
       "Are you sure you want to sign out?"
+=======
+    pathname === "/admin/branch-industry";
+
+  const isBranchIndustryActive = pathname === "/admin/branch-industry";
+
+  const handleLogout = async () => {
+    const confirmLogout = window.confirm(
+      "Apakah Anda yakin ingin keluar dari sistem?"
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
     );
 
     if (!confirmLogout) return;
@@ -62,7 +89,11 @@ export default function Sidebar() {
   };
 
   return (
+<<<<<<< HEAD
     <aside className="w-56 lg:w-64 bg-white border-r border-gray-100 flex flex-col h-screen shrink-0 z-30">
+=======
+    <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen shrink-0 z-30">
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       <div className="p-6">
         <div className="w-full h-32 bg-white border border-gray-100 rounded-[24px] shadow-sm flex items-center justify-center p-4">
           <Image
@@ -77,6 +108,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">
+<<<<<<< HEAD
         {!loading && canViewTickets && (
           <Link href="/admin/ticket">
             <div
@@ -147,10 +179,59 @@ export default function Sidebar() {
               <div
                 className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
                   isRoleManagementActive
+=======
+        {/* MENU DASHBOARD (BARU) */}
+        <Link href="/admin/dashboard">
+          <div
+            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+              isDashboardActive
+                ? "bg-orange-50 text-orange-500 border border-orange-100"
+                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Dashboard
+          </div>
+        </Link>
+
+        {/* MENU TICKETS */}
+        <Link href="/admin/ticket">
+          <div
+            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+              isTicketsActive
+                ? "bg-orange-50 text-orange-500 border border-orange-100"
+                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Tickets
+          </div>
+        </Link>
+
+        {/* MENU REPORT */}
+        <Link href="/admin/report">
+          <div
+            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+              isReportActive
+                ? "bg-orange-50 text-orange-500 border border-orange-100"
+                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Report
+          </div>
+        </Link>
+
+        {/* MENU USER MANAGEMENT (ADMIN ONLY) */}
+        {isAdmin && (
+          <div className="space-y-2">
+            <Link href="/admin/user-management">
+              <div
+                className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+                  isUserManagementActive
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
                     ? "bg-orange-50 text-orange-500 border border-orange-100"
                     : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+<<<<<<< HEAD
                 Role Management
               </div>
             </Link>
@@ -161,11 +242,27 @@ export default function Sidebar() {
                   <div
                     className={`p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.18em] transition-all ${
                       isRoleSettingActive
+=======
+                User Management
+              </div>
+            </Link>
+
+            {isUserManagementActive && (
+              <div className="ml-4 pl-4 border-l border-orange-100 space-y-2">
+                <Link href="/admin/branch-industry">
+                  <div
+                    className={`p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.18em] transition-all ${
+                      isBranchIndustryActive
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
                         ? "bg-orange-500 text-white"
                         : "text-gray-400 hover:bg-orange-50 hover:text-orange-500"
                     }`}
                   >
+<<<<<<< HEAD
                     Role Setting
+=======
+                    Branch &amp; Industry
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
                   </div>
                 </Link>
               </div>
@@ -173,6 +270,7 @@ export default function Sidebar() {
           </div>
         )}
 
+<<<<<<< HEAD
         {!loading && canViewProfile && (
           <Link href="/admin/profile">
             <div
@@ -188,6 +286,23 @@ export default function Sidebar() {
         )}
       </nav>
 
+=======
+        {/* MENU PROFILE */}
+        <Link href="/admin/profile">
+          <div
+            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+              isProfileActive
+                ? "bg-orange-50 text-orange-500 border border-orange-100"
+                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            Profile
+          </div>
+        </Link>
+      </nav>
+
+      {/* FOOTER LOGOUT */}
+>>>>>>> 7e5c5e9fd6678346b26b1c7cc7749c85e63cc30e
       <div className="p-8 border-t border-gray-50">
         <div
           onClick={handleLogout}
