@@ -108,15 +108,17 @@ export default function Sidebar() {
         )}
 
         {!loading && canViewReport && (
-          <div
-            className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
-              isReportActive
-                ? "bg-orange-50 text-orange-500 border border-orange-100"
-                : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            Report
-          </div>
+          <Link href="/admin/report">
+            <div
+              className={`p-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all ${
+                isReportActive
+                  ? "bg-orange-50 text-orange-500 border border-orange-100"
+                  : "text-gray-300 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              Report
+            </div>
+          </Link>
         )}
 
         {!loading && canViewUserManagementGroup && (
