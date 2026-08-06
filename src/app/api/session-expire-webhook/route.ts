@@ -12,76 +12,6 @@ const cerebras_model = process.env["CEREBRAS_MODEL"] || "gpt-3.5-turbo";
 
 const SESSION_EXPIRY_HOURS = 8;
 
-const VALID_INDUSTRIES = [
-  "Personal & Household Care",
-  "Food & Beverages",
-  "Agriculture & Animal Care",
-  "Industrial Solutions",
-  "Healthcare & Hygiene",
-  "Paper, Packaging & Export",
-];
-
-function normalizeIndustry(industry: string | null | undefined): string | null {
-  if (!industry) return null;
-
-  const lowerIndustry = industry.toLowerCase().trim();
-
-  // Direct match (case-insensitive)
-  const directMatch = VALID_INDUSTRIES.find(
-    (valid) => valid.toLowerCase() === lowerIndustry,
-  );
-  if (directMatch) return directMatch;
-
-  // Fuzzy match based on keywords
-  const industryKeywords: Record<string, string[]> = {
-    "Personal & Household Care": [
-      "personal",
-      "household",
-      "cosmetic",
-      "skincare",
-      "soap",
-      "shampoo",
-      "detergent",
-      "cleaning",
-    ],
-    "Food & Beverages": ["food", "beverage", "f&b", "drink"],
-    "Agriculture & Animal Care": [
-      "agriculture",
-      "animal",
-      "aquaculture",
-      "farm",
-      "livestock",
-      "poultry",
-    ],
-    "Industrial Solutions": [
-      "industrial",
-      "coating",
-      "paint",
-      "construction",
-      "automotive",
-      "manufacturing",
-    ],
-    "Healthcare & Hygiene": [
-      "healthcare",
-      "hygiene",
-      "medical",
-      "pharma",
-      "pharmaceutical",
-      "hospital",
-    ],
-    "Paper, Packaging & Export": ["paper", "packaging", "export", "pulp"],
-  };
-
-  for (const [validIndustry, keywords] of Object.entries(industryKeywords)) {
-    if (keywords.some((kw) => lowerIndustry.includes(kw))) {
-      return validIndustry;
-    }
-  }
-
-  // If no match found, return the original value
-  return industry;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -203,57 +133,25 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Normalize industry to ensure exact match with valid values
-        if (inquiryData.industry) {
-          inquiryData.industry = normalizeIndustry(inquiryData.industry);
-        }
-
-        // Ensure reason_for_inquiry is never empty - generate fallback summary if needed
-        if (
-          !inquiryData.reason_for_inquiry ||
-          String(inquiryData.reason_for_inquiry).trim() === ""
-        ) {
-          const userMessages = messagesResult.rows
-            .filter((row: any) => row.role === "user")
-            .map((row: any) => row.content);
-
-          const summaryParts: string[] = [];
-
-          if (userMessages.length > 0) {
-            summaryParts.push(
-              `User discussed: ${userMessages.slice(0, 3).join("; ")}`,
-            );
-          }
-
-          if (inquiryData.product_inquiry) {
-            summaryParts.push(
-              `Product inquiry: ${inquiryData.product_inquiry}`,
-            );
-          }
-
-          if (inquiryData.type) {
-            summaryParts.push(`Inquiry type: ${inquiryData.type}`);
-          }
-
-          if (inquiryData.industry) {
-            summaryParts.push(`Industry: ${inquiryData.industry}`);
-          }
-
-          inquiryData.reason_for_inquiry =
-            summaryParts.length > 0
-              ? summaryParts.join(". ")
-              : "Chat session with no specific inquiry details captured.";
-        }
-
         function hasValue(value: unknown) {
           return (
             value !== null && value !== undefined && String(value).trim() !== ""
           );
         }
 
-        // All sessions that reach this point are already qualified by the qualification criteria
-        // (3+ messages, has contact info, has intent), so all tickets are complete
-        const ticketStatus = 1;
+        // Determine ticket status based on qualification criteria
+        // Status 1 = complete/qualified, Status 4 = incomplete/needs follow-up
+        const hasContactInfo =
+          hasValue(inquiryData.email) || hasValue(inquiryData.phone);
+        const hasType =
+          hasValue(inquiryData.type) && inquiryData.type !== "other";
+        const hasIndustry = hasValue(inquiryData.industry);
+        const hasConsent = inquiryData.consent_to_contact === true;
+
+        // Complete if has contact info + type + (industry or consent as bonus)
+        const isComplete =
+          hasContactInfo && hasType && (hasIndustry || hasConsent);
+        const ticketStatus = isComplete ? 1 : 4;
 
         const values = [
           session.id,
@@ -347,6 +245,7 @@ export async function POST(request: NextRequest) {
           status: "success",
           inquiry_id: inquiryId.inquiry_id,
           ticket_id: ticketResult.rows[0]?.ticket_id,
+          is_complete: isComplete,
         });
       } catch (sessionError) {
         console.error(`Error processing session ${session.id}:`, sessionError);

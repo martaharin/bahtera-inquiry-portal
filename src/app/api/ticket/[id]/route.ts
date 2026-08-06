@@ -215,15 +215,11 @@ export async function PUT(
     const ticketCheck = await db.query(
       `
       SELECT
-        t.inquiry_id,
-        t.status,
-        t.assigned_user_id,
-        sp.industry AS assigned_industry,
-        sp.branch AS assigned_branch
-      FROM public.ticket t
-      LEFT JOIN public.sales_person sp
-        ON t.assigned_user_id = sp.user_id
-      WHERE t.ticket_id = $1
+        inquiry_id,
+        status,
+        assigned_user_id
+      FROM public.ticket
+      WHERE ticket_id = $1
       LIMIT 1
       `,
       [ticketId],
@@ -358,14 +354,9 @@ export async function PATCH(
 
     const ticketCheck = await db.query(
       `
-      SELECT
-        t.assigned_user_id,
-        sp.industry AS assigned_industry,
-        sp.branch AS assigned_branch
-      FROM public.ticket t
-      LEFT JOIN public.sales_person sp
-        ON t.assigned_user_id = sp.user_id
-      WHERE t.ticket_id = $1
+      SELECT assigned_user_id
+      FROM public.ticket
+      WHERE ticket_id = $1
       LIMIT 1
       `,
       [ticketId],

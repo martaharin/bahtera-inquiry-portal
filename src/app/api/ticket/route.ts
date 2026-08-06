@@ -315,10 +315,7 @@ export async function GET(req: Request) {
 
         WHERE LOWER(sp.industry) = LOWER($1)
         AND LOWER(sp.branch) = LOWER($2)
-        AND LOWER(sp.role_name) IN (
-            'sales staff',
-            'product team'
-        )
+        AND LOWER(sp.role_name) = 'sales staff'
 
         GROUP BY u.user_id, u.user_name
 
@@ -346,10 +343,7 @@ export async function GET(req: Request) {
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
 
-        WHERE LOWER(sp.role_name) IN (
-            'sales staff',
-            'product team'
-        )
+        WHERE LOWER(sp.role_name) = 'sales staff'
 
         GROUP BY u.user_id, u.user_name
 

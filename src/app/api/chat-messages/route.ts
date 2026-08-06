@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
         user_message: userResult.rows[0],
         assistant_message: {
           ...assistantResult.rows[0],
+          isConsentConfirmation: false,
         },
         recommendations: [],
         // Lets the frontend distinguish a canned guard reply from a real

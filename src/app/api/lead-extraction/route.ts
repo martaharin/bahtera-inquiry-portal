@@ -124,6 +124,11 @@ async function processLeadExtraction(sessionId: string) {
     "public",
     "inquiry-extraction-rag.txt",
   );
+  const filePath = path.join(
+    process.cwd(),
+    "public",
+    "inquiry-extraction-rag.txt",
+  );
   const fileContent = await fs.readFile(filePath, "utf-8");
 
   const aiMessages = [
@@ -304,6 +309,7 @@ async function processLeadExtraction(sessionId: string) {
   await db.query(
     `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
     [sessionId],
+  );
   );
 
   return {

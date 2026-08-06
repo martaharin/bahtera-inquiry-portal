@@ -1,52 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import {
-  getPermissionKeysBySessionUser,
-  hasPermission,
-} from "@/lib/permissions";
-
-async function getUserPermissions() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    return {
-      permissions: [],
-      response: NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        { status: 401 },
-      ),
-    };
-  }
-
-  const permissions = await getPermissionKeysBySessionUser(session.user);
-
-  return {
-    permissions,
-    response: null,
-  };
-}
 
 export async function GET() {
   try {
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.view")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 },
-      );
-    }
-
     const result = await db.query(`
       SELECT
         b.branch_id,
@@ -87,20 +43,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.create")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 },
-      );
-    }
-
     const body = await req.json();
     const { action, branch_name, branch_id, industry_name } = body;
 
@@ -214,20 +156,6 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { permissions, response } = await getUserPermissions();
-
-    if (response) return response;
-
-    if (!hasPermission(permissions, "branch_industry.delete")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden",
-        },
-        { status: 403 },
-      );
-    }
-
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const branchId = searchParams.get("branch_id");
