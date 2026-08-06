@@ -1,0 +1,32 @@
+{
+  "source": "knowledge/company/company_profile.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "records": [
+    {
+      "id": "company_profile_001",
+      "category": "company_info",
+      "intent": ["company_info", "general_information"],
+      "keywords": [
+        "bahtera",
+        "bahtera adi jaya",
+        "pt bahtera",
+        "company",
+        "about",
+        "profile",
+        "tentang",
+        "perusahaan",
+        "distributor"
+      ],
+      "priority": 10,
+      "language": "both",
+      "content": {
+        "name": "PT. Bahtera Adi Jaya",
+        "type": "specialty chemical distributor",
+        "years_experience_text": "For 20 years, Bahtera has partnered with companies to develop chemical-based products for the Indonesian market.",
+        "website": "https://bahteraadijaya.com",
+        "scope": "The assistant only handles inquiries related to PT. Bahtera Adi Jaya products, industries, services, articles, suppliers, and contact."
+      }
+    }
+  ]
+}

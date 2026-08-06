@@ -89,7 +89,7 @@ Rules:
 - Only extract information explicitly provided by the user.
 - Do not guess.
 - Keep null if unknown.
-- consent_to_contact is true only if user clearly agrees to be contacted.`;
+- consent_to_contact is true if the user provides an email or phone number (consent is assumed when contact details are shared).`;
     const aiMessages = [
       {
         role: "system",

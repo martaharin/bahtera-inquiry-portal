@@ -184,11 +184,12 @@
   },
   "contact_policy": {
     "contact_form_url": "https://bahteraadijaya.com/en/contact",
-    "primary_behavior": "Collect the user's inquiry details directly in the chatbot first. The contact form is only a fallback option, not the primary direction.",
+    "primary_behavior": "Collect the user's inquiry details directly in the chatbot when possible. If the user asks for a contact form, wants to submit manually, or wants to connect with sales, show the inline contact form in the chat instead of sharing the external URL.",
     "when_to_show_contact_form": [
       "Show the contact form if the user says they do not want to provide information through the chatbot.",
       "Show the contact form if the user asks where to submit the inquiry manually.",
       "Show the contact form if the user asks for an official contact page.",
+      "Show the contact form if the user wants to connect with sales or the sales team.",
       "Show the contact form if the conversation is ending and the user still prefers manual submission."
     ],
     "when_not_to_show_contact_form": [
@@ -201,6 +202,7 @@
       "Do not provide direct email or phone number unless explicitly present in retrieved context.",
       "Do not use https://bahteraadijaya.com/contact.",
       "Do not mention [sales@bahteraadijaya.com](mailto:sales@bahteraadijaya.com).",
+      "When the inline contact form is shown in the chat, do not share the external contact form URL; ask the user to fill out the form that appears in the chat.",
       "For stock, price, availability, documentation, SDS, TDS, COA, technical specification, or partnership follow-up, collect the user's inquiry details first, then explain that Bahtera's team can follow up."
     ]
   },

@@ -1,0 +1,8 @@
+{
+  "source": "knowledge/prompts/handoff.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "template_id": "handoff",
+  "en": "Once the key details are collected, summarize the inquiry and guide the user to submit it through the contact form: {contact_form_url}",
+  "id": "Setelah detail utama terkumpul, rangkum inquiry dan arahkan user untuk submit melalui contact form: {contact_form_url}"
+}

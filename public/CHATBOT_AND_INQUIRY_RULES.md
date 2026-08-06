@@ -559,7 +559,9 @@ Checks for:
 
 #### Duplicate Detection
 
-**Check**: Current message matches last user message in history
+**Check**: Current message matches last user message in history **and that message was already answered** (an assistant reply exists after it)
+
+An identical but *unanswered* last user message (e.g. the previous attempt failed before the assistant reply) is treated as a retry, not a duplicate: the stored user message is reused and the AI generates the missing answer.
 
 **Response**: Canned response without AI call
 > "I already received your message. Our team will respond shortly."

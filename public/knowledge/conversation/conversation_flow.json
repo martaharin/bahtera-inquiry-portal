@@ -1,0 +1,51 @@
+{
+  "source": "knowledge/conversation/conversation_flow.json",
+  "version": "1.0",
+  "last_updated": "2026-07-20",
+  "pipelines": {
+    "buy_from_bahtera": [
+      "product_inquiry",
+      "details",
+      "industry",
+      "company",
+      "name",
+      "email",
+      "phone",
+      "location",
+      "industry_scale",
+      "consent_to_contact",
+      "handoff"
+    ],
+    "supply_to_bahtera": [
+      "company",
+      "name",
+      "email",
+      "phone",
+      "location",
+      "product_inquiry",
+      "details",
+      "industry",
+      "industry_scale",
+      "consent_to_contact",
+      "handoff"
+    ],
+    "general_information": [
+      "type_of_inquiry",
+      "product_inquiry",
+      "company",
+      "name",
+      "email"
+    ]
+  },
+  "terminal_step": "handoff",
+  "guide_after_messages_without_identity": 5,
+  "proactive_product_offer_after_messages": 3,
+  "industries": [
+    "Personal & Household Care",
+    "Food & Beverages",
+    "Agriculture & Animal Care",
+    "Industrial Solutions",
+    "Healthcare & Hygiene",
+    "Paper, Packaging & Export"
+  ]
+}

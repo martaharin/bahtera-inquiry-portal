@@ -187,9 +187,9 @@ export function qualifySession(
     "ya, saya ingin dihubungi",
     "ya saya setuju",
   ];
-  const hasConsent = consentPatterns.some((pattern) =>
-    allUserText.includes(pattern),
-  );
+  const hasConsent =
+    hasContactInfo ||
+    consentPatterns.some((pattern) => allUserText.includes(pattern));
 
   const qualified =
     userMessageCount >= MIN_USER_MESSAGES && hasContactInfo && hasIntent;
