@@ -310,7 +310,6 @@ async function processLeadExtraction(sessionId: string) {
     `UPDATE chat_sessions SET extraction_status = 'qualified' WHERE id = $1`,
     [sessionId],
   );
-  );
 
   return {
     success: true,
