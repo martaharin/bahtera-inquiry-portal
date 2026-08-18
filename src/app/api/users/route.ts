@@ -20,7 +20,8 @@ export async function GET() {
       WHERE LOWER(sp.role_name) IN (
         'sales staff',
         'sales',
-        'product'
+        'product',
+        'product team'
       )
 
       ORDER BY u.user_name ASC;

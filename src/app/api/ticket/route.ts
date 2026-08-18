@@ -117,19 +117,22 @@ export async function GET(req: Request) {
         const p = ticketQueryParams.length;
 
         conditions.push(`
-          (
+        (
             t.assigned_user_id = $${p - 2}
 
             OR
 
             t.assigned_user_id IN (
-              SELECT user_id
-              FROM public.sales_person
-              WHERE LOWER(industry) = LOWER($${p - 1})
-              AND LOWER(branch) = LOWER($${p})
-              AND LOWER(role_name) = 'sales staff'
+                SELECT user_id
+                FROM public.sales_person
+                WHERE LOWER(industry) = LOWER($${p - 1})
+                AND LOWER(branch) = LOWER($${p})
+                AND LOWER(role_name) IN (
+                    'sales staff',
+                    'product team'
+                )
             )
-          )
+        )
         `);
       } else if (canViewOwnTickets && userId) {
         ticketQueryParams.push(userId);
@@ -343,7 +346,10 @@ export async function GET(req: Request) {
         LEFT JOIN public.ticket t
         ON u.user_id = t.assigned_user_id
 
-        WHERE LOWER(sp.role_name) = 'sales staff'
+        WHERE LOWER(sp.role_name) IN (
+            'sales staff',
+            'product team'
+        )
 
         GROUP BY u.user_id, u.user_name
 
