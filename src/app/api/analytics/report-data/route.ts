@@ -9,12 +9,16 @@ const pool = new Pool({
   port: parseInt(process.env.DB_PORT || "5432"),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const monthFilter = searchParams.get("month") || "all"; // 'all' | '1'..'12'
+
     // 1. Query ML Insights
     const insightsRes = await pool.query(`
-      SELECT inquiry_id, buying_intent, topic_cluster, lead_score, ai_reason 
-      FROM ml_customer_insights;
+      SELECT c.inquiry_id, c.buying_intent, c.topic_cluster, c.lead_score, c.ai_reason, q.created_at
+      FROM ml_customer_insights c
+      LEFT JOIN inquiry q ON c.inquiry_id = q.inquiry_id;
     `);
 
     // 2. Query Forecast dari Colab (ml_industry_forecast)
@@ -27,7 +31,9 @@ export async function GET() {
     let extractedProducts: any[] = [];
     try {
       const nerRes = await pool.query(`
-        SELECT product_name, industry FROM ml_extracted_products;
+        SELECT p.product_name, p.industry, p.inquiry_id, q.created_at
+        FROM ml_extracted_products p
+        LEFT JOIN inquiry q ON p.inquiry_id = q.inquiry_id::text;
       `);
       extractedProducts = nerRes.rows || [];
     } catch {
@@ -36,7 +42,7 @@ export async function GET() {
 
     // 4. Query Ticket & Users untuk Sales Routing
     const ticketRes = await pool.query(`
-      SELECT ticket_id, converted_to_erp, assigned_user_id 
+      SELECT ticket_id, converted_to_erp, assigned_user_id, created_at 
       FROM ticket;
     `);
 
@@ -65,9 +71,23 @@ export async function GET() {
       };
     }
 
-    const insights = insightsRes.rows || [];
+    let insights = insightsRes.rows || [];
     const forecasts = forecastRes.rows || [];
-    const tickets = ticketRes.rows || [];
+    let tickets = ticketRes.rows || [];
+
+    // ================= 🎯 FILTER DATA BERDASARKAN BULAN TERPILIH =================
+    if (monthFilter !== "all") {
+      const selectedMonthInt = parseInt(monthFilter);
+      if (!isNaN(selectedMonthInt) && selectedMonthInt >= 1 && selectedMonthInt <= 12) {
+        const isInMonth = (row: any) => {
+          if (!row.created_at) return false;
+          return new Date(row.created_at).getMonth() + 1 === selectedMonthInt;
+        };
+        insights = insights.filter(isInMonth);
+        extractedProducts = extractedProducts.filter(isInMonth);
+        tickets = tickets.filter(isInMonth);
+      }
+    }
 
     const buList = [
       "Healthcare & Hygiene",
@@ -85,7 +105,7 @@ export async function GET() {
       // Current Volume
       const currentVolume = insights.filter(i => 
         i.topic_cluster?.toLowerCase().includes(key)
-      ).length || 4;
+      ).length || 0;
 
       // Forecast Volume dari DB Colab
       const dbForecast = forecasts.find(f => 
@@ -127,7 +147,7 @@ export async function GET() {
 
       const topProductsForRecommendation = productsList.slice(0, 3).map(p => p.name).join(", ") || "produk utama";
 
-      // LOGIKA REKOMENDASI PINTAR ADAPTIF
+      // LOGIKA
       let recommendation = "";
 
       if (growthPct >= 15) {

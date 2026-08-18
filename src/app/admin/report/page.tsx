@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { generateReportPdf } from "@/lib/pdf/reportPdf";
 
 interface ProductItem {
   name: string;
@@ -85,6 +86,35 @@ export default function AIReportPage() {
     ? `${monthNames[selectedMonthInt - 1]} ${currentDate.getFullYear()}`
     : "Full Year 2026";
 
+  // State loading untuk proses Export PDF
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string>("");
+
+  const handleExportPdf = () => {
+    if (!reportData) return;
+    setIsExporting(true);
+    try {
+      const blob = generateReportPdf(reportData, {
+        periodLabel: activeMonthLabel,
+        monthNumber: !isNaN(selectedMonthInt) && selectedMonthInt >= 1 && selectedMonthInt <= 12
+          ? selectedMonthInt
+          : undefined,
+        year: currentDate.getFullYear(),
+      });
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(URL.createObjectURL(blob));
+      setPdfFileName(`Laporan-Market-Intelligence-${activeMonthLabel.replace(/ /g, "-")}.pdf`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const closePdfPreview = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 bg-white min-h-screen" style={{ fontFamily: "Arial, sans-serif" }}>
       
@@ -92,7 +122,7 @@ export default function AIReportPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl print:hidden shadow-sm">
         <div>
           <h2 className="text-sm font-bold text-[#343694] uppercase tracking-wider">
-            AI Market Intelligence &amp; Product Entity Report
+            Market Intelligence &amp; Product Entity Report
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Laporan analitis prediksi pasar &amp; ekstraksi entitas produk NLP terfilter per bulan.
@@ -116,6 +146,14 @@ export default function AIReportPage() {
           >
             🔄 Refresh
           </button>
+
+          <button
+            onClick={handleExportPdf}
+            disabled={isExporting || isLoading || !reportData}
+            className="px-4 h-9 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+          >
+            {isExporting ? "⏳ Menyiapkan PDF..." : "📄 Preview PDF"}
+          </button>
         </div>
       </div>
 
@@ -123,7 +161,7 @@ export default function AIReportPage() {
       <div className="hidden print:block border-b-2 border-black pb-4 text-center mb-6">
         <h1 className="text-3xl font-bold uppercase tracking-wide text-[#343694]">PT Bahtera Adi Jaya</h1>
         <p className="text-sm text-gray-600 mt-1 font-semibold">
-          AI Actionable Recommendation Document — Periode Laporan: <span className="text-orange-500">{activeMonthLabel}</span>
+          Actionable Recommendation Document — Periode Laporan: <span className="text-orange-500">{activeMonthLabel}</span>
         </p>
       </div>
 
@@ -136,12 +174,12 @@ export default function AIReportPage() {
           <table className="w-full text-left text-[11px] border-collapse">
             <thead>
               <tr className="bg-[#343694] text-white font-bold border-b border-gray-300 print:bg-gray-100 print:text-black">
-                <th className="p-3 border border-gray-200 w-40">Business Unit Category</th>
-                <th className="p-3 border border-gray-200 w-64">Extracted Product Focus (NLP NER)</th>
+                <th className="p-3 border border-gray-200 w-36">Business Unit Category</th>
+                <th className="p-3 border border-gray-200 w-48">Extracted Product Focus (NLP NER)</th>
                 <th className="p-3 text-center border border-gray-200 w-24">Current Volume</th>
                 <th className="p-3 text-center border border-gray-200 w-28">Forecast Volume</th>
-                <th className="p-3 text-center border border-gray-200 w-32">ML Trend Status (% Growth)</th>
-                <th className="p-3 border border-gray-200">AI Actionable Product Recommendation</th>
+                <th className="p-3 text-center border border-gray-200 w-28">ML Trend Status (% Growth)</th>
+                <th className="p-3 border border-gray-200">Actionable Product Recommendation</th>
               </tr>
             </thead>
             <tbody>
@@ -162,10 +200,7 @@ export default function AIReportPage() {
                       <td className="p-3 font-bold text-gray-900 border border-gray-200 bg-gray-50/30">{f.unit}</td>
                       
                       {/* KOLOM PRODUK INTERAKTIF DROPDOWN HIDE / SHOW */}
-                      <td className="p-3 border border-gray-200 text-[10px]">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[#343694] font-bold">📦 Entitas Produk ({totalProducts}):</span>
-                        </div>
+                      <td className="p-3 border border-gray-200 text-[10px] align-top">
 
                         {/* DUA MODE TAMPILAN: EXPANDED vs COLLAPSED */}
                         {!isExpanded ? (
@@ -173,7 +208,7 @@ export default function AIReportPage() {
                             <ul className="space-y-1">
                               {top3Products.map((p, pIdx) => (
                                 <li key={pIdx} className="flex justify-between items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                                  <span className="truncate max-w-[150px] font-medium text-gray-800">{p.name}</span>
+                                  <span className="truncate max-w-[100px] font-medium text-gray-800">{p.name}</span>
                                   <span className="bg-[#343694] text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold ml-1">
                                     {p.count}
                                   </span>
@@ -225,6 +260,35 @@ export default function AIReportPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* MODAL PRATINJAU PDF */}
+      {pdfUrl && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <div className="text-xs font-bold text-gray-700 truncate">
+                📄 Pratinjau Dokumen — {pdfFileName}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={pdfUrl}
+                  download={pdfFileName}
+                  className="px-4 h-8 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm"
+                >
+                  ⬇ Download PDF
+                </a>
+                <button
+                  onClick={closePdfPreview}
+                  className="px-3 h-8 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-lg cursor-pointer"
+                >
+                  ✕ Tutup
+                </button>
+              </div>
+            </div>
+            <iframe src={pdfUrl} title="Pratinjau Laporan PDF" className="w-full flex-1 bg-white" />
+          </div>
         </div>
       )}
 

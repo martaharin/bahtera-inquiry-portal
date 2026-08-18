@@ -181,7 +181,7 @@ export default function AIDashboardPage() {
           <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
             <div className="mb-2">
               <h3 className="text-xs font-bold text-[#343694] uppercase tracking-wide">
-                1. Business Unit Trends &amp; AI Forecasting Outlook ({timeFrame === "monthly" ? "Monthly Trends by Date" : "Yearly Trends & Predictions"})
+                1. Business Unit Trends &amp; Forecasting Outlook ({timeFrame === "monthly" ? "Monthly Trends by Date" : "Yearly Trends & Predictions"})
               </h3>
             </div>
 
